@@ -5,7 +5,7 @@ import click
 import requests
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-from PyPDF2 import PdfMerger
+from pypdf import PdfWriter
 from rich.console import Console
 from rich.progress import Progress
 from rich.traceback import install
@@ -97,7 +97,7 @@ def download_and_merge_pdfs(html_file, output, download_dir):
     for link in pdf_links[:5]:  # Show only first 5 links for brevity
         console.print(f"- {link}")
 
-    merger = PdfMerger()
+    merger = PdfWriter()
 
     with Progress() as progress:
         task = progress.add_task("[cyan]Downloading PDFs...", total=len(pdf_links))
@@ -124,7 +124,8 @@ def download_and_merge_pdfs(html_file, output, download_dir):
 
     # Save merged PDF
     console.print(f"[bold]Merging PDFs into: {output}[/bold]", style="cyan")
-    merger.write(output)
+    with open(output, "wb") as output_pdf:
+        merger.write(output_pdf)
     merger.close()
     console.print(f"[green]✔ Merged PDF saved as: {output}[/green]")
 

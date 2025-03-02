@@ -1,6 +1,6 @@
 requests==2.32.3
 beautifulsoup4==4.13.3
-PyPDF2==3.0.1
+pypdf==3.9.0
 click==8.1.8
 rich==13.9.4
 fake-useragent==1.2.0
