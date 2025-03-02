@@ -71,10 +71,10 @@ def download_and_merge_pdfs(html_file, output, download_dir):
         with open(html_file, 'r', encoding='utf-8') as file:
             soup = BeautifulSoup(file, 'html.parser')
 
-    console.print("[bold yellow]Debug: Checking all links in the HTML file[/bold yellow]")
-    # Print all links, their attributes, text, and parent elements for debugging
-    for link in soup.find_all("a", href=True):
-        console.print(f"Debug: Link - {link['href']}, Attributes - {link.attrs}, Text - {link.text}, Parent - {link.parent}")
+    # console.print("[bold yellow]Debug: Checking all links in the HTML file[/bold yellow]")
+    # # Print all links, their attributes, text, and parent elements for debugging
+    # for link in soup.find_all("a", href=True):
+    #     console.print(f"Debug: Link - {link['href']}, Attributes - {link.attrs}, Text - {link.text}, Parent - {link.parent}")
 
     # Extract potential PDF links
     pdf_links = [
