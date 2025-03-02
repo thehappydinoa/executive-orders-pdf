@@ -21,7 +21,7 @@ jobs:
         python-version: '3.x'
 
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -37,7 +37,7 @@ jobs:
       run: echo "NOW=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
     - name: Cache downloaded PDFs
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: downloaded_pdfs
         key: ${{ runner.os }}-pdfs-${{ env.NOW }}
