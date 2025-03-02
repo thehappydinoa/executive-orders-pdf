@@ -34,7 +34,7 @@ jobs:
         pip install -r requirements.txt
     
     - name: Set current date as env variable
-      run: echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+      run: echo "NOW=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
     - name: Cache downloaded PDFs
       uses: actions/cache@v2
@@ -57,7 +57,8 @@ jobs:
           echo "changes=false" >> $GITHUB_ENV
         else
           echo "Changes detected"
-          echo "changes=true" >> $GITHUB_ENV
+          echo "changes=true" >> $GITHUB_ENV\
+        fi
 
     - name: Commit and push changes
       if: env.changes == 'true'
