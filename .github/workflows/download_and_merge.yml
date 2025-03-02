@@ -27,7 +27,7 @@ jobs:
 
     - name: Run download and merge script
       run: |
-        python /c:/Users/theha/Documents/Projects/Download All Executive Orders/main.py example.html --output combined_document.pdf --download-dir downloaded_pdfs
+        python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/donald-trump/2025" --output combined_document.pdf --download-dir downloaded_pdfs
 
     - name: Commit and push changes
       run: |
