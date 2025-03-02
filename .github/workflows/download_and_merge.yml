@@ -3,9 +3,7 @@ name: Download and Merge PDFs
 on:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
