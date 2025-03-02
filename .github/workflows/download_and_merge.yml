@@ -34,25 +34,27 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Set current date as env variable
-      run: echo "NOW=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+    - name: Set environment variables
+      run: |
+        echo "MONTH=$(date +'%Y-%m')" >> $GITHUB_ENV
+        echo "YEAR=$(date +'%Y')" >> $GITHUB_ENV
 
     - name: Cache downloaded PDFs
       uses: actions/cache@v4
       with:
         path: downloaded_pdfs
-        key: ${{ runner.os }}-pdfs-${{ env.NOW }}
+        key: ${{ runner.os }}-pdfs-${{ env.MONTH }}
         restore-keys: |
           ${{ runner.os }}-pdfs-
 
     - name: Run download and merge script
       run: |
-        python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/donald-trump/2025" --output combined_document.pdf --download-dir downloaded_pdfs
+        python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/joe-biden/${{ env.YEAR }}" --output "executive_orders_${{ env.YEAR }}.pdf" --download-dir downloaded_pdfs
 
     - name: Check for changes
       id: git_status
       run: |
-        git add combined_document.pdf
+        git add "executive_orders_${{ env.YEAR }}.pdf"
         if [ -z "$(git status --porcelain)" ]; then
           echo "No changes to commit"
           echo "changes=false" >> $GITHUB_ENV
@@ -68,5 +70,5 @@ jobs:
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git commit -m 'Automated update of combined_document.pdf'
+        git commit -m "Automated update of executive orders for ${{ env.YEAR }}"
         git push

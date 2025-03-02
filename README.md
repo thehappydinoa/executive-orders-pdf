@@ -2,11 +2,11 @@
 
 Automatically downloads and combines Executive Orders from the Federal Register into a single PDF file.
 
-## Latest Combined PDF
+## Latest Combined PDFs
 
-📄 [Download Combined Executive Orders (PDF)](combined_document.pdf)
+📄 [Download Current Year's Executive Orders (PDF)](executive_orders_2024.pdf)
 
-*This file is automatically updated daily through GitHub Actions.*
+*These files are automatically updated daily through GitHub Actions.*
 
 ## Features
 
@@ -26,19 +26,21 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 ## Usage
 
 ```bash
-python main.py [URL] --output combined_document.pdf --download-dir downloaded_pdfs
+python main.py [URL] --output executive_orders_2025.pdf --download-dir downloaded_pdfs
 ```
 
 ## Development
 
 1. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 2. Run the script:
+
 ```bash
-python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/donald-trump/2025"
+python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/donald-trump/2025" --output executive_orders_2025.pdf --download-dir downloaded_pdfs
 ```
 
 ## GitHub Actions
