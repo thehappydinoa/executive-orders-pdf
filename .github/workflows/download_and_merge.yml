@@ -52,7 +52,7 @@ jobs:
       id: git_status
       run: |
         git add combined_document.pdf
-        if git diff-index --quiet HEAD; then
+        if [ -z "$(git status --porcelain)" ]; then
           echo "No changes to commit"
           echo "changes=false" >> $GITHUB_ENV
         else
