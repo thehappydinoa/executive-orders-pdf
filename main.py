@@ -7,14 +7,17 @@ from rich.console import Console
 from rich.progress import Progress
 from rich.traceback import install
 from urllib.parse import urljoin
+from fake_useragent import UserAgent
 
 # Enable Rich traceback for better error handling
 install()
 console = Console()
 
 def download_file(url, folder):
+    ua = UserAgent()
+    headers = {'User-Agent': ua.random}
     local_filename = os.path.join(folder, url.split('/')[-1])
-    with requests.get(url, stream=True) as r:
+    with requests.get(url, headers=headers, stream=True) as r:
         r.raise_for_status()
         with open(local_filename, 'wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
@@ -52,13 +55,16 @@ def download_and_merge_pdfs(html_file, output, download_dir):
     """
     Downloads all official PDFs from a Federal Register HTML file and merges them into a single PDF.
     """
+    ua = UserAgent()
+    headers = {'User-Agent': ua.random}
+
     console.rule("[bold blue]Federal Register PDF Downloader & Merger")
     console.print(f"Processing file: {html_file}", style="bold green")
 
     os.makedirs(download_dir, exist_ok=True)
 
     if html_file.startswith("http"):
-        response = requests.get(html_file)
+        response = requests.get(html_file, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
     else:
@@ -97,7 +103,7 @@ def download_and_merge_pdfs(html_file, output, download_dir):
             pdf_filename = os.path.join(download_dir, os.path.basename(pdf_url))
 
             console.print(f"Downloading: {pdf_url}", style="blue")
-            pdf_response = requests.get(pdf_url)
+            pdf_response = requests.get(pdf_url, headers=headers)
 
             if pdf_response.status_code == 200:
                 with open(pdf_filename, "wb") as pdf_file:
