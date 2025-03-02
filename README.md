@@ -4,7 +4,7 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 
 ## Latest Combined PDFs
 
-📄 [Download Current Year's Executive Orders (PDF)](executive_orders_2024.pdf)
+📄 [Download Current Year's Executive Orders (PDF)](executive_orders_2025.pdf)
 
 *These files are automatically updated daily through GitHub Actions.*
 
