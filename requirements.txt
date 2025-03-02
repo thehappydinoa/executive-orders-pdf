@@ -3,6 +3,6 @@ pypdf==3.17.0
 click==8.1.8
 rich==13.9.4
 fake-useragent==2.0.3
-aiohttp==3.11.0b0
+aiohttp==3.11.13
 aiofiles==24.1.0
 tenacity==8.2.3
