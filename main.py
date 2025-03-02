@@ -1,13 +1,14 @@
 import os
-import requests
+from urllib.parse import urljoin
+
 import click
+import requests
 from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 from PyPDF2 import PdfMerger
 from rich.console import Console
 from rich.progress import Progress
 from rich.traceback import install
-from urllib.parse import urljoin
-from fake_useragent import UserAgent
 
 # Enable Rich traceback for better error handling
 install()
@@ -17,6 +18,12 @@ def download_file(url, folder):
     ua = UserAgent()
     headers = {'User-Agent': ua.random}
     local_filename = os.path.join(folder, url.split('/')[-1])
+    
+    # Check if the file already exists and is not empty
+    if os.path.exists(local_filename) and os.path.getsize(local_filename) > 0:
+        console.print(f"[yellow]File already exists and is not empty: {local_filename}[/yellow]")
+        return local_filename
+
     with requests.get(url, headers=headers, stream=True) as r:
         r.raise_for_status()
         with open(local_filename, 'wb') as f:
