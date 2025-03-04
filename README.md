@@ -4,7 +4,7 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 
 ## Latest Combined PDFs
 
-📄 [Download Current Year's Executive Orders (PDF)](executive_orders_2025.pdf)
+📄 [Download Current Year's Executive Orders (PDF)](donald_trump_executive_orders_2025.pdf)
 
 *These files are automatically updated daily through GitHub Actions.*
 
@@ -26,7 +26,7 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 ## Usage
 
 ```bash
-python main.py [URL] --output executive_orders_2025.pdf --download-dir downloaded_pdfs
+python main.py [URL] --output donald_trump_executive_orders_2025.pdf --download-dir downloaded_pdfs
 ```
 
 ## Development
