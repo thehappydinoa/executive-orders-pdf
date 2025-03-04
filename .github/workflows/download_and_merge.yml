@@ -55,6 +55,7 @@ jobs:
       id: git_status
       run: |
         git add "executive_orders_${{ env.YEAR }}.pdf"
+        git add downloaded_pdfs/*.pdf
         if [ -z "$(git status --porcelain)" ]; then
           echo "No changes to commit"
           echo "changes=false" >> $GITHUB_ENV
