@@ -26,7 +26,7 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 ## Usage
 
 ```bash
-python main.py [URL] --output donald_trump_executive_orders_2025.pdf --download-dir downloaded_pdfs
+python main.py [URL] --output [OUTPUT_FILE] --download-dir [DOWNLOAD_DIR]
 ```
 
 ## Development
@@ -64,7 +64,7 @@ pre-commit install
 5. Run the script
 
 ```bash
-python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/donald-trump/2025" --output executive_orders_2025.pdf --download-dir downloaded_pdfs
+python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/donald-trump/2025" --output donald_trump_executive_orders_2025.pdf --download-dir downloaded_pdfs
 ```
 
 ## Code Quality

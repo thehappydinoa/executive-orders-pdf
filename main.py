@@ -1,5 +1,4 @@
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Set
 
@@ -8,7 +7,7 @@ import aiohttp
 import click
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-from pypdf import PdfWriter
+from pypdf import PdfReader, PdfWriter
 from rich.console import Console
 from rich.progress import Progress, TaskID
 from rich.traceback import install
@@ -76,12 +75,45 @@ async def extract_pdf_links(html_file: str, headers: dict) -> List[str]:
     ]
 
 
-def merge_pdfs(pdf_files: Set[Path], output: Path) -> None:
-    merger = PdfWriter()
-    merger.metadata = None
-    with ThreadPoolExecutor() as executor:
-        list(executor.map(merger.append, pdf_files))
+def clean_pdf_for_deterministic_output(pdf_path: Path) -> PdfWriter:
+    """
+    Clean a PDF to make it more deterministic by removing all potential sources of
+    non-deterministic content like timestamps and random identifiers.
+    """
+    reader = PdfReader(pdf_path)
+    writer = PdfWriter()
 
+    # Copy pages without any metadata
+    for page in reader.pages:
+        writer.add_page(page)
+
+    # First compress identical objects, then remove metadata
+    # This avoids the error with None._info.indirect_reference
+    writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+    writer.metadata = None
+
+    return writer
+
+
+def merge_pdfs(pdf_files: Set[Path], output: Path) -> None:
+    # Sort the PDF files by path to ensure consistent order
+    sorted_pdf_files = sorted(pdf_files)
+
+    merger = PdfWriter()
+
+    # First clean each PDF to make it deterministic
+    for pdf_path in sorted_pdf_files:
+        cleaned_writer = clean_pdf_for_deterministic_output(pdf_path)
+
+        # Transfer all pages from the cleaned writer to the merger
+        for page in cleaned_writer.pages:
+            merger.add_page(page)
+
+    # First compress identical objects, then remove metadata in the merged PDF as well
+    merger.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+    merger.metadata = None
+
+    # Write the merged PDF
     with open(output, "wb") as output_file:
         merger.write(output_file)
     merger.close()
