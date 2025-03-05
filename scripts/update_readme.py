@@ -6,6 +6,7 @@ It reads the generated JSON data and updates specific sections in the README.
 
 import argparse
 import json
+import os
 import re
 from datetime import datetime
 
@@ -17,6 +18,9 @@ def main(priority_president="trump"):
     Args:
         priority_president: President name to prioritize in the README (default: "trump")
     """
+    # Ensure the combined_pdfs directory exists
+    os.makedirs("combined_pdfs", exist_ok=True)
+
     # Load the PDF summary
     try:
         with open("pdf_summary.json", "r", encoding="utf-8") as f:
@@ -97,9 +101,7 @@ def main(priority_president="trump"):
         latest_section = "## Latest Combined PDFs\n\n"
         latest_section += f"📄 [Download {president_display} Executive Orders {latest_pdf['year']} (PDF)]({latest_pdf['filename']})\n\n"
         latest_section += f"*Currently showing the latest executive orders from {president_display}.*\n\n"
-        latest_section += (
-            "*These files are automatically updated daily through GitHub Actions.*"
-        )
+        latest_section += "*These files are automatically updated daily through GitHub Actions and stored in the `combined_pdfs` folder.*"
 
         latest_pattern = r"(## Latest Combined PDFs.*?)(\n## |\Z)"
         if re.search(latest_pattern, readme_content, re.DOTALL):

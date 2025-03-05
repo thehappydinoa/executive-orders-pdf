@@ -71,7 +71,7 @@ jobs:
 
     - name: Run download and merge script
       run: |
-        python cli.py --president ${{ env.PRESIDENT }} --year ${{ env.YEAR }}
+        python cli.py --president ${{ env.PRESIDENT }} --year ${{ env.YEAR }} --output combined_pdfs/${{ env.PRESIDENT }}_executive_orders_${{ env.YEAR }}.pdf
 
     - name: Check for changes
       id: git_status

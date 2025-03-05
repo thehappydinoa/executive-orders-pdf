@@ -43,7 +43,8 @@ def get_pdf_info(pdf_path):
             year = parts[-1]
 
         return {
-            "filename": filename,
+            "filename": f"combined_pdfs/{filename}",
+            "base_filename": filename,
             "president": president,
             "year": year,
             "pages": num_pages,
@@ -62,8 +63,23 @@ def main(priority_president="trump"):
     Args:
         priority_president: President name to prioritize in sorting (default: "trump")
     """
-    # Find all PDFs in the repository
-    pdf_files = glob.glob("*.pdf")
+    # Ensure the combined_pdfs directory exists
+    os.makedirs("combined_pdfs", exist_ok=True)
+
+    # Find all PDFs in the combined_pdfs directory
+    pdf_files = glob.glob("combined_pdfs/*.pdf")
+
+    # If no PDFs found in combined_pdfs, check for PDFs in root and move them
+    if not pdf_files:
+        root_pdfs = glob.glob("*.pdf")
+        for pdf_file in root_pdfs:
+            target_path = os.path.join("combined_pdfs", os.path.basename(pdf_file))
+            print(f"Moving {pdf_file} to {target_path}")
+            os.rename(pdf_file, target_path)
+
+        # Update the list of PDFs after moving
+        pdf_files = glob.glob("combined_pdfs/*.pdf")
+
     pdf_summaries = []
 
     for pdf_file in pdf_files:

@@ -7,11 +7,11 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 
 ## Latest Combined PDFs
 
-📄 [Download Donald Trump Executive Orders 2025 (PDF)](donald-trump_executive_orders_2025.pdf)
+📄 [Download Donald Trump Executive Orders 2025 (PDF)](combined_pdfs/donald-trump_executive_orders_2025.pdf)
 
 *Currently showing the latest executive orders from Donald Trump.*
 
-*These files are automatically updated daily through GitHub Actions.*
+*These files are automatically updated daily through GitHub Actions and stored in the `combined_pdfs` folder.*
 
 
 ## Available Executive Order Collections
