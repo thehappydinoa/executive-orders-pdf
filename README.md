@@ -31,17 +31,51 @@ python main.py [URL] --output donald_trump_executive_orders_2025.pdf --download-
 
 ## Development
 
-1. Install dependencies:
+1. Create and activate a virtual environment:
+
+```bash
+# On Windows
+python -m venv venv
+.\venv\Scripts\activate
+
+# On macOS/Linux
+python -m venv venv
+source venv/bin/activate
+```
+
+2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Run the script:
+3. For development, install development dependencies
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+4. Set up pre-commit hooks (Optional)
+
+```bash
+pre-commit install
+```
+
+5. Run the script
 
 ```bash
 python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/donald-trump/2025" --output executive_orders_2025.pdf --download-dir downloaded_pdfs
 ```
+
+## Code Quality
+
+This project uses the following tools to maintain code quality:
+
+- **Black**: Code formatter that adheres to PEP 8 standards
+- **isort**: Sorts and organizes imports
+- **flake8**: Linter with flake8-bugbear for additional bug detection
+
+These tools are automatically run as pre-commit hooks when you commit changes.
 
 ## GitHub Actions
 

@@ -1,10 +1,10 @@
 import asyncio
-import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import List, Set
-from urllib.parse import urljoin
-import aiohttp
+
 import aiofiles
+import aiohttp
 import click
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
@@ -13,7 +13,6 @@ from rich.console import Console
 from rich.progress import Progress, TaskID
 from rich.traceback import install
 from tenacity import retry, stop_after_attempt, wait_exponential
-from concurrent.futures import ThreadPoolExecutor
 
 # Enable Rich traceback for better error handling
 install()
