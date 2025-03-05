@@ -7,9 +7,31 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 
 ## Latest Combined PDFs
 
-📄 [Download Current Year's Executive Orders (PDF)](donald-trump_executive_orders_2025.pdf)
+📄 [Download Donald Trump Executive Orders 2025 (PDF)](donald-trump_executive_orders_2025.pdf)
+
+*Currently showing the latest executive orders from Donald Trump.*
 
 *These files are automatically updated daily through GitHub Actions.*
+
+
+## Available Executive Order Collections
+
+| President | Year | Pages | Size | Last Updated | Download |
+|:----------|:-----|:------|:-----|:-------------|:---------|
+| Joe Biden | 2025 | 63 | 0.83 MB | 2025-03-04 | [Download](joe-biden_executive_orders_2025.pdf) |
+| Donald Trump | 2025 | 220 | 3.43 MB | 2025-03-04 | [Download](donald-trump_executive_orders_2025.pdf) |
+
+<!-- PDF_TABLE_END -->
+
+<!-- STATS_START -->
+## Summary Statistics
+
+- **Total Executive Order Collections:** 2
+- **Total Pages:** 283
+- **Total Size:** 4.26 MB
+- **Last Updated:** 2025-03-04
+
+<!-- STATS_END -->
 
 ## Features
 

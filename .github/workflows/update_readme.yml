@@ -1,0 +1,73 @@
+name: Update README with PDF Summary
+
+on:
+  # Run after the download_and_merge workflow completes
+  workflow_run:
+    workflows: ["Download and Merge PDFs"]
+    types:
+      - completed
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      priority_president:
+        description: 'President name to prioritize (default: trump)'
+        required: false
+        default: 'trump'
+        type: string
+  # Also run weekly to ensure README stays updated
+  schedule:
+    - cron: '0 1 * * 1'  # Run at 1 AM on Mondays
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONIOENCODING: utf-8
+      PRIORITY_PRESIDENT: ${{ github.event.inputs.priority_president || 'trump' }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch all history to get accurate last modified dates
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pypdf rich tabulate
+
+    - name: Generate PDF summary
+      run: |
+        python scripts/pdf_summary.py --priority "$PRIORITY_PRESIDENT"
+
+    - name: Update README.md
+      run: |
+        python scripts/update_readme.py --priority "$PRIORITY_PRESIDENT"
+
+    - name: Check for changes
+      id: git_status
+      run: |
+        if [[ -n $(git status --porcelain README.md) ]]; then
+          echo "README updated, committing changes"
+          echo "changes=true" >> $GITHUB_ENV
+        else
+          echo "No changes to README"
+          echo "changes=false" >> $GITHUB_ENV
+        fi
+
+    - name: Commit and push changes
+      if: ${{ env.changes == 'true' }}
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add README.md
+        git commit -m "Update README with latest PDF summary"
+        git push
