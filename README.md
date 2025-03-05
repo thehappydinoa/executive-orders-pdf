@@ -1,10 +1,13 @@
 # Executive Orders PDF Downloader
 
+![GitHub Actions](https://github.com/thehappydinoa/executive-orders-pdf/actions/workflows/download_and_merge.yml/badge.svg)
+![GitHub last commit](https://img.shields.io/github/last-commit/thehappydinoa/executive-orders-pdf)
+
 Automatically downloads and combines Executive Orders from the Federal Register into a single PDF file.
 
 ## Latest Combined PDFs
 
-📄 [Download Current Year's Executive Orders (PDF)](donald_trump_executive_orders_2025.pdf)
+📄 [Download Current Year's Executive Orders (PDF)](donald-trump_executive_orders_2025.pdf)
 
 *These files are automatically updated daily through GitHub Actions.*
 
@@ -16,17 +19,40 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 - Automatic retry on failure
 - Progress tracking
 - PDF merging
+- Configuration file support
+- Modular design with separate CLI module
+- Comprehensive test suite
 
 ## Project Structure
 
 - `.github/workflows/download_and_merge.yml`: GitHub Actions workflow to automate the download and merge process.
-- `main.py`: Python script to download and merge PDFs.
+- `main.py`: Core functionality for downloading and merging PDFs.
+- `cli.py`: Command-line interface implementation.
+- `config.yaml`: Configuration file for customizing behavior.
 - `requirements.txt`: Python dependencies for the project.
+- `requirements-dev.txt`: Development dependencies.
+- `tests/`: Test suite using pytest.
 
 ## Usage
 
+### Basic Usage
+
 ```bash
-python main.py [URL] --output [OUTPUT_FILE] --download-dir [DOWNLOAD_DIR]
+python cli.py [URL] --output [OUTPUT_FILE] --download-dir [DOWNLOAD_DIR]
+```
+
+### Using Configuration File
+
+You can also use a configuration file to set default options:
+
+```bash
+python cli.py --config config.yaml
+```
+
+### Specifying President and Year
+
+```bash
+python cli.py --president donald-trump --year 2025
 ```
 
 ## Development
@@ -64,7 +90,28 @@ pre-commit install
 5. Run the script
 
 ```bash
-python main.py "https://www.federalregister.gov/presidential-documents/executive-orders/donald-trump/2025" --output donald_trump_executive_orders_2025.pdf --download-dir downloaded_pdfs
+# Replace YYYY with the current year (e.g., 2025)
+python cli.py --president donald-trump --year YYYY
+```
+
+For example, in 2025 you would run:
+
+```bash
+python cli.py --president donald-trump --year 2025
+```
+
+You can also use the configuration file:
+
+```bash
+python cli.py --config config.yaml
+```
+
+## Running Tests
+
+Run the test suite with pytest:
+
+```bash
+pytest
 ```
 
 ## Code Quality
@@ -80,6 +127,10 @@ These tools are automatically run as pre-commit hooks when you commit changes.
 ## GitHub Actions
 
 The GitHub Actions workflow is set to run daily at midnight to download and merge the latest executive orders.
+
+## Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
 
 ## License
 

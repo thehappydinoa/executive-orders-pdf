@@ -1,0 +1,18 @@
+# Default configuration for executive-orders-pdf
+
+# Download settings
+download:
+  concurrent_downloads: 5
+  retry_attempts: 3
+  timeout: 30  # seconds
+
+# Output settings
+output:
+  default_filename: "executive_orders.pdf"
+  download_dir: "downloaded_pdfs"
+
+# URL settings
+url:
+  base_url: "https://www.federalregister.gov/presidential-documents/executive-orders"
+  president: "donald-trump"
+  year: "2025"
