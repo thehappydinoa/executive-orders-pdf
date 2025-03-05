@@ -2,6 +2,8 @@
 
 ![GitHub Actions](https://github.com/thehappydinoa/executive-orders-pdf/actions/workflows/download_and_merge.yml/badge.svg)
 ![GitHub last commit](https://img.shields.io/github/last-commit/thehappydinoa/executive-orders-pdf)
+![License](https://img.shields.io/github/license/thehappydinoa/executive-orders-pdf)
+![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)
 
 Automatically downloads and combines Executive Orders from the Federal Register into a single PDF file.
 
