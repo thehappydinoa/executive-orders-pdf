@@ -2,10 +2,9 @@
 
 import os
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-import pytest_asyncio
 from aiohttp import ClientSession
 from rich.progress import Progress
 
@@ -30,11 +29,22 @@ def download_dir():
         pass
 
 
-@pytest_asyncio.fixture
-async def client_session():
-    """Create an aiohttp client session."""
-    async with ClientSession() as session:
-        yield session
+# Use a regular fixture instead of an async one
+@pytest.fixture
+def mock_client_session():
+    """Create a mock aiohttp client session."""
+    mock = MagicMock(spec=ClientSession)
+    # Properly configure get method that returns a context manager
+    context_manager = MagicMock()
+    response = MagicMock()
+
+    # Set up the context manager chain
+    mock.get.return_value = context_manager
+    context_manager.__aenter__.return_value = response
+    response.read = MagicMock()
+    response.read.return_value = b"test content"
+
+    return mock
 
 
 @pytest.mark.asyncio
@@ -78,7 +88,7 @@ async def test_download_file_new_file(download_dir):
 
 
 @pytest.mark.asyncio
-async def test_download_file_existing_file(download_dir, client_session):
+async def test_download_file_existing_file(download_dir, mock_client_session):
     """Test downloading a file that already exists."""
     # Create a mock file that "exists"
     url = "https://example.com/existing.pdf"
@@ -88,18 +98,15 @@ async def test_download_file_existing_file(download_dir, client_session):
     with open(existing_file, "w") as f:
         f.write("Existing content")
 
-    # Create mock session (should not be used)
-    mock_session = AsyncMock()
-
     # Create downloader and download file
     downloader = PDFDownloader(download_dir=download_dir)
-    result = await downloader.download_file(mock_session, url)
+    result = await downloader.download_file(mock_client_session, url)
 
     # Assertions
     assert result == existing_file
     assert existing_file in downloader.downloaded_files
     # Session.get should not be called since file exists
-    mock_session.get.assert_not_called()
+    mock_client_session.get.assert_not_called()
 
 
 # Use monkeypatch to bypass the actual download but keep the progress tracking
@@ -174,9 +181,8 @@ async def test_download_all(download_dir):
         downloader.downloaded_files.add(file_path)
         return file_path
 
-    # Properly mock ClientSession for async context management
-    mock_session = AsyncMock()
-    mock_session.__aenter__.return_value = mock_session
+    # Create a mock session that won't cause async issues
+    mock_session = MagicMock()
 
     # Mock the ClientSession class to return our mocked instance
     with patch("aiohttp.ClientSession", return_value=mock_session):
@@ -184,6 +190,7 @@ async def test_download_all(download_dir):
         with patch.object(
             PDFDownloader, "download_file", side_effect=mock_download_file
         ):
+            # Create a non-async function to pass to asyncio.run
             results = await downloader.download_all(urls)
 
     # Assertions

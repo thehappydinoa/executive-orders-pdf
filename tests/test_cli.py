@@ -74,8 +74,16 @@ def test_cli_help():
 @patch("cli.asyncio.run")
 def test_cli_with_url(mock_run, mock_main):
     """Test CLI with direct URL argument."""
-    # Configure our main function mock
-    mock_run.side_effect = lambda x: x  # Just return the coroutine object
+
+    # Create a NON-coroutine function for main to return
+    def dummy_func(*args, **kwargs):
+        return None
+
+    # Return our dummy function instead of a coroutine
+    mock_main.return_value = dummy_func
+
+    # Configure mock_run to return a simple value
+    mock_run.return_value = None
 
     runner = CliRunner()
     result = runner.invoke(
@@ -117,8 +125,15 @@ def test_cli_with_president_and_year(mock_load_config, mock_run, mock_main):
         },
     }
 
-    # Configure our main function mock
-    mock_run.side_effect = lambda x: x  # Just return the coroutine object
+    # Create a NON-coroutine function for main to return
+    def dummy_func(*args, **kwargs):
+        return None
+
+    # Return our dummy function instead of a coroutine
+    mock_main.return_value = dummy_func
+
+    # Configure mock_run to return a simple value
+    mock_run.return_value = None
 
     runner = CliRunner()
     result = runner.invoke(cli, ["--president", "biden", "--year", "2023"])
@@ -152,8 +167,15 @@ def test_cli_with_config_file(mock_load_config, mock_run, mock_main):
         },
     }
 
-    # Configure our main function mock
-    mock_run.side_effect = lambda x: x  # Just return the coroutine object
+    # Create a NON-coroutine function for main to return
+    def dummy_func(*args, **kwargs):
+        return None
+
+    # Return our dummy function instead of a coroutine
+    mock_main.return_value = dummy_func
+
+    # Configure mock_run to return a simple value
+    mock_run.return_value = None
 
     runner = CliRunner()
     result = runner.invoke(cli, ["--config", "config.yaml"])
