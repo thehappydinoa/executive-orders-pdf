@@ -4,6 +4,16 @@ on:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight
   workflow_dispatch:
+    inputs:
+      president:
+        description: 'President name (e.g., donald-trump, joe-biden)'
+        required: false
+        default: 'donald-trump'
+        type: string
+      year:
+        description: 'Year to fetch executive orders for'
+        required: false
+        type: number
 
 permissions:
   contents: write
@@ -36,19 +46,32 @@ jobs:
 
     - name: Set environment variables
       run: |
-        echo "YEAR=$(date +'%Y')" >> $GITHUB_ENV
+        # Use input year if provided, otherwise use current year
+        if [ -n "${{ github.event.inputs.year }}" ]; then
+          echo "YEAR=${{ github.event.inputs.year }}" >> $GITHUB_ENV
+        else
+          echo "YEAR=$(date +'%Y')" >> $GITHUB_ENV
+        fi
+
+        # Use input president if provided, otherwise use default (donald-trump)
+        if [ -n "${{ github.event.inputs.president }}" ]; then
+          echo "PRESIDENT=${{ github.event.inputs.president }}" >> $GITHUB_ENV
+        else
+          echo "PRESIDENT=donald-trump" >> $GITHUB_ENV
+        fi
 
     - name: Cache downloaded PDFs
       uses: actions/cache@v4
       with:
         path: downloaded_pdfs
-        key: ${{ runner.os }}-pdfs-${{ env.YEAR }}
+        key: ${{ runner.os }}-pdfs-${{ env.PRESIDENT }}-${{ env.YEAR }}
         restore-keys: |
+          ${{ runner.os }}-pdfs-${{ env.PRESIDENT }}-
           ${{ runner.os }}-pdfs-
 
     - name: Run download and merge script
       run: |
-        python cli.py --president donald-trump --year ${{ env.YEAR }}
+        python cli.py --president ${{ env.PRESIDENT }} --year ${{ env.YEAR }}
 
     - name: Check for changes
       id: git_status
@@ -69,5 +92,5 @@ jobs:
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git commit -m "Automated update of executive orders for ${{ env.YEAR }}"
+        git commit -m "Automated update of executive orders for ${{ env.PRESIDENT }} - ${{ env.YEAR }}"
         git push
