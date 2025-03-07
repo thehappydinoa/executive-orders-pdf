@@ -29,9 +29,9 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 ## Summary Statistics
 
 - **Total Executive Order Collections:** 2
-- **Total Pages:** 283
-- **Total Size:** 4.26 MB
-- **Last Updated:** 2025-03-06
+- **Total Pages:** 295
+- **Total Size:** 4.46 MB
+- **Last Updated:** 2025-03-07
 
 <!-- STATS_END -->
 
