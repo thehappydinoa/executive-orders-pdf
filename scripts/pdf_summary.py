@@ -43,7 +43,7 @@ def get_pdf_info(pdf_path):
             year = parts[-1]
 
         return {
-            "filename": f"combined_pdfs/{filename}",
+            "filename": filename,
             "base_filename": filename,
             "president": president,
             "year": year,

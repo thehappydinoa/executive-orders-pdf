@@ -41,13 +41,13 @@ def main(priority_president="trump"):
         return
 
     # Create the PDF table for README
-    pdf_table = "## Available Executive Order Collections\n\n"
+    pdf_table = ""  # Remove the header since it's already in the README
     pdf_table += "| President | Year | Pages | Size | Last Updated | Download |\n"
     pdf_table += "|:----------|:-----|:------|:-----|:-------------|:---------|\n"
 
     for pdf in pdf_summaries:
         pdf_table += f'| {pdf["president"]} | {pdf["year"]} | {pdf["pages"]} | {pdf["size_mb"]} MB | {pdf["last_modified"]} | '
-        pdf_table += f'[Download]({pdf["filename"]}) |\n'
+        pdf_table += f'[Download](combined_pdfs/{pdf["filename"]}) |\n'
 
     # Get total statistics
     total_pages = sum(pdf.get("pages", 0) for pdf in pdf_summaries)
@@ -67,12 +67,23 @@ def main(priority_president="trump"):
     stats_marker_end = "<!-- STATS_END -->"
 
     # Replace content between markers
-    readme_content = re.sub(
-        f"{re.escape(table_marker_start)}.*?{re.escape(table_marker_end)}",
-        f"{table_marker_start}\n{pdf_table}\n{table_marker_end}",
-        readme_content,
-        flags=re.DOTALL,
-    )
+    if table_marker_start in readme_content and table_marker_end in readme_content:
+        readme_content = re.sub(
+            f"{re.escape(table_marker_start)}.*?{re.escape(table_marker_end)}",
+            f"{table_marker_start}\n{pdf_table}\n{table_marker_end}",
+            readme_content,
+            flags=re.DOTALL,
+        )
+    else:
+        # If markers are missing, find the table section and replace it
+        table_pattern = r"(## Available Executive Order Collections\n\n\|.*?\n\|.*?\n)((?:\|.*?\n)*)"
+        if re.search(table_pattern, readme_content, re.DOTALL):
+            readme_content = re.sub(
+                table_pattern,
+                f"{table_marker_start}\n{pdf_table}\n{table_marker_end}",
+                readme_content,
+                flags=re.DOTALL,
+            )
 
     readme_content = re.sub(
         f"{re.escape(stats_marker_start)}.*?{re.escape(stats_marker_end)}",
@@ -99,7 +110,7 @@ def main(priority_president="trump"):
             president_display = latest_pdf["president"]
 
         latest_section = "## Latest Combined PDFs\n\n"
-        latest_section += f"📄 [Download {president_display} Executive Orders {latest_pdf['year']} (PDF)]({latest_pdf['filename']})\n\n"
+        latest_section += f"📄 [Download {president_display} Executive Orders {latest_pdf['year']} (PDF)](combined_pdfs/{latest_pdf['filename']})\n\n"
         latest_section += f"*Currently showing the latest executive orders from {president_display}.*\n\n"
         latest_section += "*These files are automatically updated daily through GitHub Actions and stored in the `combined_pdfs` folder.*"
 
