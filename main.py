@@ -286,7 +286,7 @@ def merge_pdfs(pdf_files: Set[Path], output: Path) -> None:
                             # Parse the date
                             date = datetime.strptime(date_str, "%B %d, %Y")
                             all_dates.append(date)
-                        except:
+                        except Exception:
                             continue
 
                 # If we found any dates, use the earliest one as the publication date

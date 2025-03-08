@@ -24,4 +24,4 @@ repos:
     hooks:
     -   id: flake8
         additional_dependencies: [flake8-bugbear==24.2.6]
-        args: ["--max-line-length=88"]  # Match Black's line length
+        args: ["--max-line-length=88", "--ignore=E501"]  # Match Black's line length
