@@ -21,8 +21,8 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 <!-- PDF_TABLE_START -->
 | President | Year | Pages | Size | Last Updated | Download |
 |:----------|:-----|:------|:-----|:-------------|:---------|
-| Donald Trump | 2025 | 248 | 3.92 MB | 2025-03-19 | [Download](combined_pdfs/donald-trump_executive_orders_2025.pdf) |
-| Joe Biden | 2025 | 63 | 0.83 MB | 2025-03-19 | [Download](combined_pdfs/joe-biden_executive_orders_2025.pdf) |
+| Donald Trump | 2025 | 248 | 3.92 MB | 2025-03-20 | [Download](combined_pdfs/donald-trump_executive_orders_2025.pdf) |
+| Joe Biden | 2025 | 63 | 0.83 MB | 2025-03-20 | [Download](combined_pdfs/joe-biden_executive_orders_2025.pdf) |
 
 <!-- PDF_TABLE_END -->
 
@@ -32,7 +32,7 @@ Automatically downloads and combines Executive Orders from the Federal Register 
 - **Total Executive Order Collections:** 2
 - **Total Pages:** 311
 - **Total Size:** 4.75 MB
-- **Last Updated:** 2025-03-19
+- **Last Updated:** 2025-03-20
 
 <!-- STATS_END -->
 
