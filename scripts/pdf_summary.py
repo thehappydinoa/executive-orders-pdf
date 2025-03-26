@@ -30,7 +30,9 @@ def get_pdf_info(pdf_path):
         # Get file stats
         stats = os.stat(pdf_path)
         size_mb = stats.st_size / (1024 * 1024)
-        last_modified = datetime.fromtimestamp(stats.st_mtime).strftime("%Y-%m-%d")
+        last_modified = datetime.fromtimestamp(stats.st_mtime).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
 
         # Parse filename to get president and year
         filename = os.path.basename(pdf_path)
