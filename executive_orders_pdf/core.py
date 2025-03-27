@@ -11,14 +11,14 @@ import aiohttp
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from pypdf import PdfReader, PdfWriter
-from rich.console import Console
-from rich.progress import Progress, TaskID
-from rich.traceback import install
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-# Enable Rich traceback for better error handling
-install()
-console = Console()
+from executive_orders_pdf.utils import (
+    FileSystemUtils,
+    PDFUtils,
+    ProgressTracker,
+    console,
+)
 
 
 class PDFDownloader:
@@ -33,38 +33,15 @@ class PDFDownloader:
             concurrent_downloads: Maximum number of concurrent downloads
         """
         self.download_dir = Path(download_dir)
-        self.download_dir.mkdir(parents=True, exist_ok=True)
+        FileSystemUtils.ensure_directory(self.download_dir)
         self.concurrent_downloads = concurrent_downloads
         self.semaphore = asyncio.Semaphore(concurrent_downloads)
         self.ua = UserAgent()
-        self.progress: Progress = None
-        self.task_id: TaskID = None
         self.downloaded_files: Set[Path] = set()
         self.failed_downloads: Set[str] = set()
         console.print(
             f"[blue]Initialized PDFDownloader with {concurrent_downloads} concurrent downloads[/blue]"
         )
-
-    async def verify_pdf(self, file_path: Path) -> bool:
-        """
-        Verify that a downloaded PDF is valid and not corrupted.
-
-        Args:
-            file_path: Path to the PDF file
-
-        Returns:
-            bool: True if PDF is valid, False otherwise
-        """
-        try:
-            reader = PdfReader(file_path)
-            # Try to access pages to verify PDF structure
-            _ = len(reader.pages)
-            return True
-        except Exception as e:
-            console.print(
-                f"[red]PDF verification failed for {file_path}: {str(e)}[/red]"
-            )
-            return False
 
     @retry(
         stop=stop_after_attempt(3),
@@ -90,7 +67,7 @@ class PDFDownloader:
 
         try:
             if local_filename.exists() and local_filename.stat().st_size > 0:
-                if await self.verify_pdf(local_filename):
+                if PDFUtils.verify_pdf(local_filename):
                     console.print(
                         f"[yellow]Using existing valid file: {local_filename}[/yellow]"
                     )
@@ -109,7 +86,7 @@ class PDFDownloader:
                         content = await response.read()
                         await f.write(content)
 
-                    if not await self.verify_pdf(local_filename):
+                    if not PDFUtils.verify_pdf(local_filename):
                         raise ValueError(
                             f"Downloaded PDF {local_filename} failed verification"
                         )
@@ -122,9 +99,6 @@ class PDFDownloader:
                     )
 
                     self.downloaded_files.add(local_filename)
-                    if self.progress:
-                        self.progress.update(self.task_id, advance=1)
-
                     return local_filename
 
         except Exception as e:
@@ -147,9 +121,10 @@ class PDFDownloader:
         console.print(f"[blue]Starting download of {len(urls)} PDFs[/blue]")
         headers = {"User-Agent": self.ua.random}
 
-        async with aiohttp.ClientSession(headers=headers) as session:
-            tasks = [self.download_file(session, url) for url in urls]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+        with ProgressTracker(len(urls), "Downloading PDFs"):
+            async with aiohttp.ClientSession(headers=headers) as session:
+                tasks = [self.download_file(session, url) for url in urls]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Process results and log failures
         successful_downloads = []
@@ -199,32 +174,6 @@ async def extract_pdf_links(html_file: str, headers: dict) -> List[str]:
     ]
 
 
-def clean_pdf_for_deterministic_output(pdf_path: Path) -> PdfWriter:
-    """
-    Clean a PDF to make it more deterministic by removing all potential sources of
-    non-deterministic content like timestamps and random identifiers.
-
-    Args:
-        pdf_path: Path to the PDF file
-
-    Returns:
-        PdfWriter with cleaned PDF content
-    """
-    reader = PdfReader(pdf_path)
-    writer = PdfWriter()
-
-    # Copy pages without any metadata
-    for page in reader.pages:
-        writer.add_page(page)
-
-    # First compress identical objects, then remove metadata
-    # This avoids the error with None._info.indirect_reference
-    writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
-    writer.metadata = None
-
-    return writer
-
-
 def merge_pdfs(pdf_files: Set[Path], output: Path) -> None:
     """
     Merge multiple PDFs into a single file with deterministic output.
@@ -258,7 +207,7 @@ def merge_pdfs(pdf_files: Set[Path], output: Path) -> None:
                     # Look for Federal Register publication date
                     r"(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s+2025",
                     # Look for specific Federal Register format
-                    r"Filed\s+\d{1,2}(?:–|-)(?:January|February|March|April|May|June|July|August|September|October|November|December)(?:–|-)\d{1,2};\s+\d{1,2}:\d{2}\s+[ap]m",
+                    r"Filed\s+\d{1,2}(?:–|-)(?:January|February|March|April|May|June|July|August|September|October|November|December)(?:–|-)",
                 ]
 
                 pub_date = None
@@ -365,7 +314,7 @@ def merge_pdfs(pdf_files: Set[Path], output: Path) -> None:
         console.print(
             f"[yellow]Adding {pdf_path.name} (Doc #{doc_num}) to merged PDF[/yellow]"
         )
-        cleaned_writer = clean_pdf_for_deterministic_output(pdf_path)
+        cleaned_writer = PDFUtils.clean_pdf_for_deterministic_output(pdf_path)
 
         # Transfer all pages from the cleaned writer to the merger
         for page in cleaned_writer.pages:
@@ -408,6 +357,6 @@ if __name__ == "__main__":
         cli()
     except ImportError:
         console.print(
-            "[red]Error: cli.py not found. Please make sure it exists in the same directory.[/red]"  # noqa: E501
+            "[red]Error: cli.py not found. Please make sure it exists in the same directory.[/red]"
         )
         sys.exit(1)

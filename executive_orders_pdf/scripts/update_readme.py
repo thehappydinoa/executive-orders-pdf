@@ -5,10 +5,11 @@ It reads the generated JSON data and updates specific sections in the README.
 """
 
 import argparse
-import json
-import os
 import re
 from datetime import datetime
+from pathlib import Path
+
+from executive_orders_pdf.utils import ConfigUtils, FileSystemUtils, console
 
 
 def main(priority_president="trump"):
@@ -19,17 +20,12 @@ def main(priority_president="trump"):
         priority_president: President name to prioritize in the README (default: "trump")
     """
     # Ensure the combined_pdfs directory exists
-    os.makedirs("combined_pdfs", exist_ok=True)
+    FileSystemUtils.ensure_directory(Path("combined_pdfs"))
 
     # Load the PDF summary
-    try:
-        with open("pdf_summary.json", "r", encoding="utf-8") as f:
-            pdf_summaries = json.load(f)
-    except FileNotFoundError:
-        print("Error: pdf_summary.json not found. Run pdf_summary.py first.")
-        return
-    except json.JSONDecodeError:
-        print("Error: Invalid JSON in pdf_summary.json.")
+    pdf_summaries = ConfigUtils.load_json_config(Path("pdf_summary.json"))
+    if not pdf_summaries:
+        console.print("[red]Error: No PDF summaries found in pdf_summary.json[/red]")
         return
 
     # Read the existing README
@@ -37,7 +33,7 @@ def main(priority_president="trump"):
         with open("README.md", "r", encoding="utf-8") as f:
             readme_content = f.read()
     except FileNotFoundError:
-        print("Error: README.md not found.")
+        console.print("[red]Error: README.md not found[/red]")
         return
 
     # Create the PDF table for README
@@ -127,9 +123,9 @@ def main(priority_president="trump"):
     with open("README.md", "w", encoding="utf-8") as f:
         f.write(readme_content)
 
-    print("README.md has been updated with PDF summary information")
+    console.print("README.md has been updated with PDF summary information")
     if priority_pdfs:
-        print(f"Featuring {president_display} as the prioritized president")
+        console.print(f"Featuring {president_display} as the prioritized president")
 
 
 if __name__ == "__main__":

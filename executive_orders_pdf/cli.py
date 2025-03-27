@@ -6,15 +6,13 @@ from pathlib import Path
 import click
 import yaml
 from fake_useragent import UserAgent
-from rich.console import Console
-from rich.progress import Progress
 from rich.traceback import install
 
-from main import PDFDownloader, extract_pdf_links, merge_pdfs
+from executive_orders_pdf.core import PDFDownloader, extract_pdf_links, merge_pdfs
+from executive_orders_pdf.utils import FileSystemUtils, console
 
 # Enable Rich traceback for better error handling
 install()
-console = Console()
 
 
 def load_config(config_file=None):
@@ -74,7 +72,7 @@ def cli(html_file, output, download_dir, concurrent_downloads, config, president
     if not download_dir:
         download_dir = app_config["output"]["download_dir"]
     download_path = Path(download_dir)
-    download_path.mkdir(parents=True, exist_ok=True)
+    FileSystemUtils.ensure_directory(download_path)
 
     # Set output filename if not provided
     if not output:
@@ -83,7 +81,7 @@ def cli(html_file, output, download_dir, concurrent_downloads, config, president
         if president and year:
             output = f"{president}_executive_orders_{year}.pdf"
     output_path = Path(output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    FileSystemUtils.ensure_directory(output_path.parent)
 
     # Construct URL if not provided directly
     if not html_file:
@@ -134,12 +132,7 @@ async def download_and_merge(
 
     # Setup downloader with progress bar
     downloader = PDFDownloader(download_dir, concurrent_downloads)
-    with Progress() as progress:
-        downloader.progress = progress
-        downloader.task_id = progress.add_task(
-            "[cyan]Downloading...", total=len(pdf_links)
-        )
-        await downloader.download_all(pdf_links)
+    await downloader.download_all(pdf_links)
 
     # Get all PDFs in the download directory, regardless of whether they were just downloaded
     all_pdfs = set(download_dir.glob("*.pdf"))
