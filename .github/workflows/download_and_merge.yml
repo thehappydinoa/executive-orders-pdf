@@ -70,12 +70,30 @@ jobs:
         executive-orders-pdf --president ${{ env.PRESIDENT }} --year ${{ env.YEAR }} --output combined_pdfs/${{ env.PRESIDENT }}_executive_orders_${{ env.YEAR }}.pdf
 
     - name: Generate PDF summary
+      continue-on-error: true
       run: |
-        pdf-summary --priority ${{ env.PRESIDENT }}
+        if [ -d "combined_pdfs" ] && [ "$(ls -A combined_pdfs/*.pdf 2>/dev/null)" ]; then
+          pdf-summary --priority ${{ env.PRESIDENT }} || {
+            echo "Warning: PDF summary generation failed, but continuing..."
+            exit 0
+          }
+        else
+          echo "No PDF files found in combined_pdfs directory"
+          exit 0
+        fi
 
     - name: Update README
+      continue-on-error: true
       run: |
-        update-readme --priority ${{ env.PRESIDENT }}
+        if [ -f "pdf_summary.json" ]; then
+          update-readme --priority ${{ env.PRESIDENT }} || {
+            echo "Warning: README update failed, but continuing..."
+            exit 0
+          }
+        else
+          echo "No pdf_summary.json found, skipping README update"
+          exit 0
+        fi
 
     - name: Check for changes
       id: git_status
