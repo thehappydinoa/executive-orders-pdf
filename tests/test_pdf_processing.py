@@ -3,11 +3,10 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-from pypdf import PdfReader, PdfWriter
-
 import main
+import pytest
 from main import clean_pdf_for_deterministic_output, extract_pdf_links, merge_pdfs
+from pypdf import PdfReader, PdfWriter
 
 
 # Patch the extract_pdf_links function completely for the test
