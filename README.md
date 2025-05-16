@@ -210,7 +210,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <!-- PDF_TABLE_START -->
 | President | Year | Pages | Size | Last Updated | Download |
 |:----------|:-----|:------|:-----|:-------------|:---------|
-| Donald Trump | 2025 | 505 | 13.76 MB | 2025-05-15 05:05:59 | [Download](combined_pdfs/donald-trump_executive_orders_2025.pdf) |
+| Donald Trump | 2025 | 508 | 13.82 MB | 2025-05-16 05:06:01 | [Download](combined_pdfs/donald-trump_executive_orders_2025.pdf) |
 | Joe Biden | 2025 | 63 | 0.83 MB | 2025-03-27 00:30:09 | [Download](combined_pdfs/joe-biden_executive_orders_2025.pdf) |
 
 <!-- PDF_TABLE_END -->
@@ -219,9 +219,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Summary Statistics
 
 - **Total Executive Order Collections:** 2
-- **Total Pages:** 568
-- **Total Size:** 14.59 MB
-- **Last Updated:** 2025-05-15
+- **Total Pages:** 571
+- **Total Size:** 14.65 MB
+- **Last Updated:** 2025-05-16
 
 <!-- STATS_END -->
 
