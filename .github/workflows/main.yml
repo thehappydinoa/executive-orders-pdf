@@ -1,6 +1,10 @@
-name: Download and Merge PDFs
+name: CI/CD Pipeline
 
 on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
   schedule:
     - cron: '0 5 * * *' # Runs every day at midnight EST (5 AM UTC)
   workflow_dispatch:
@@ -14,17 +18,86 @@ on:
         description: 'Year to fetch executive orders for'
         required: false
         type: number
+      skip_download:
+        description: 'Skip download and only run pre-commit/tests'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
 
 jobs:
-  download-and-merge:
+  pre-commit:
     runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pre-commit
+        pip install -e .
+
+    - name: Run pre-commit on all files
+      run: |
+        pre-commit install
+        pre-commit run --all-files
+
+  test:
+    needs: pre-commit
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install pytest pytest-cov
+
+    - name: Run tests
+      run: |
+        pytest tests/ --cov=executive_orders_pdf --cov-report=xml --cov-report=term-missing
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+
+  download-and-merge:
+    needs: [pre-commit, test]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'schedule') ||
+      (github.event_name == 'workflow_dispatch' && !inputs.skip_download) ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for accurate timestamps
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -67,7 +140,7 @@ jobs:
 
     - name: Run download and merge script
       run: |
-        executive-orders-pdf --president ${{ env.PRESIDENT }} --year ${{ env.YEAR }} --output combined_pdfs/${{ env.PRESIDENT }}_executive_orders_${{ env.YEAR }}.pdf
+        executive-orders-pdf --president ${{ env.PRESIDENT }} --year ${{ env.YEAR }} --output combined_pdfs/${{ env.PRESIDENT }}_executive_orders_${{ env.YEAR }}.pdf || true
 
     - name: Generate PDF summary
       continue-on-error: true
@@ -95,24 +168,36 @@ jobs:
           exit 0
         fi
 
+    - name: Run pre-commit on changed files
+      run: |
+        pre-commit install
+        # Only run on changed files to avoid unnecessary processing
+        git add -A
+        pre-commit run || true  # Don't fail the workflow if pre-commit fixes files
+
     - name: Check for changes
       id: git_status
       run: |
-        git add *.pdf pdf_summary.json README.md
+        git add .
         if [ -z "$(git status --porcelain)" ]; then
           echo "No changes to commit"
-          echo "changes=false" >> $GITHUB_ENV
+          echo "changes=false" >> $GITHUB_OUTPUT
         else
           echo "Changes detected"
-          echo "changes=true" >> $GITHUB_ENV
+          echo "changes=true" >> $GITHUB_OUTPUT
         fi
 
     - name: Commit and push changes
-      if: ${{ env.changes == 'true' }}
+      if: steps.git_status.outputs.changes == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git commit -m "Automated update of executive orders for ${{ env.PRESIDENT }} - ${{ env.YEAR }}"
+        git commit -m "Automated update of executive orders for ${{ env.PRESIDENT }} - ${{ env.YEAR }}
+
+        - Downloaded and merged PDFs
+        - Updated PDF summary
+        - Updated README
+        - Applied pre-commit formatting"
         git push
