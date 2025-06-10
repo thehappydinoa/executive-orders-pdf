@@ -2,6 +2,7 @@
 
 import asyncio
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 import click
 import yaml
@@ -15,9 +16,9 @@ from executive_orders_pdf.utils import FileSystemUtils, console
 install()
 
 
-def load_config(config_file=None):
+def load_config(config_file: Optional[str] = None) -> Dict[str, Any]:
     """Load configuration from a YAML file."""
-    default_config = {
+    default_config: Dict[str, Dict[str, Any]] = {
         "download": {
             "concurrent_downloads": 5,
             "retry_attempts": 3,
@@ -60,11 +61,16 @@ def load_config(config_file=None):
 @click.option("--config", "-f", help="Path to configuration file", default=None)
 @click.option("--president", "-p", help="President name (e.g., donald-trump)")
 @click.option("--year", "-y", help="Year to download executive orders for")
-def cli(html_file, output, download_dir, concurrent_downloads, config, president, year):
-    """Downloads and merges PDFs from Federal Register.
-
-    First checks for missing PDFs and downloads them, then merges all PDFs.
-    """
+def cli(
+    html_file: Optional[str] = None,
+    output: Optional[str] = None,
+    download_dir: Optional[str] = None,
+    concurrent_downloads: Optional[int] = None,
+    config: Optional[str] = None,
+    president: Optional[str] = None,
+    year: Optional[str] = None,
+) -> None:
+    """First checks for missing PDFs and downloads them, then merges all PDFs."""
     # Load configuration
     app_config = load_config(config)
 
@@ -105,7 +111,7 @@ def cli(html_file, output, download_dir, concurrent_downloads, config, president
 
 async def download_and_merge(
     html_file: str, output: Path, download_dir: Path, concurrent_downloads: int
-):
+) -> None:
     """Download any missing PDFs and then merge all existing PDFs."""
     console.rule("[bold blue]Federal Register PDF Downloader & Merger")
 

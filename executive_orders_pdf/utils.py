@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pypdf import PdfReader, PdfWriter
 from rich.console import Console
@@ -145,7 +145,7 @@ class ConfigUtils:
     """Common configuration-related utility functions."""
 
     @staticmethod
-    def load_json_config(config_path: Path) -> Dict:
+    def load_json_config(config_path: Path) -> Any:
         """
         Load configuration from a JSON file.
 
@@ -178,6 +178,7 @@ class ConfigUtils:
         """
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
+            f.write("\n")  # Add a newline at the end of the file
 
 
 class ProgressTracker:
@@ -204,11 +205,11 @@ class ProgressTracker:
         if self.progress:
             self.progress.update(self.task_id, advance=advance)
 
-    def __enter__(self):
+    def __enter__(self) -> "ProgressTracker":
         """Context manager entry."""
         self.progress.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Context manager exit."""
         self.progress.stop()

@@ -76,8 +76,9 @@ def test_clean_pdf_for_deterministic_output():
     mock_writer = MagicMock(spec=PdfWriter)
 
     # Create the patches
-    with patch("main.PdfReader", return_value=mock_reader), patch(
-        "main.PdfWriter", return_value=mock_writer
+    with (
+        patch("main.PdfReader", return_value=mock_reader),
+        patch("main.PdfWriter", return_value=mock_writer),
     ):
         # Call the function
         result = clean_pdf_for_deterministic_output(Path("test.pdf"))
@@ -110,9 +111,11 @@ def test_merge_pdfs():
     mock_merger = MagicMock(spec=PdfWriter)
 
     # Create the patches
-    with patch(
-        "main.clean_pdf_for_deterministic_output", side_effect=mock_writers
-    ), patch("main.PdfWriter", return_value=mock_merger), patch("builtins.open"):
+    with (
+        patch("main.clean_pdf_for_deterministic_output", side_effect=mock_writers),
+        patch("main.PdfWriter", return_value=mock_merger),
+        patch("builtins.open"),
+    ):
         # Call the function
         merge_pdfs(pdf_files, Path("merged.pdf"))
 

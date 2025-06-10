@@ -1,21 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "executive-orders-pdf"
+version = "0.1.0"
+description = "A tool to download and merge executive order PDFs from the Federal Register"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Aidan Holland", email = "thehappydinoa@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "aiofiles>=24.1.0",
+    "aiohttp>=3.11.13",
+    "beautifulsoup4>=4.13.3",
+    "click>=8.1.8",
+    "fake-useragent>=2.1.0",
+    "pypdf>=5.3.1",
+    "pyyaml>=6.0.1",
+    "rich>=13.9.4",
+    "tenacity>=9.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "bandit>=1.8.0",
+    "black>=25.1.0",
+    "flake8>=7.1.2",
+    "flake8-bugbear>=24.12.12",
+    "flake8-docstrings>=1.7.0",
+    "isort>=6.0.1",
+    "mypy>=1.14.0",
+    "pre-commit>=4.1.0",
+    "pytest>=8.2.0",
+    "pytest-asyncio>=0.25.3",
+    "pytest-cov>=6.0.0",
+    "types-aiofiles",
+    "types-PyYAML",
+    "types-requests",
+]
+
+[project.scripts]
+executive-orders-pdf = "executive_orders_pdf.cli:cli"
+pdf-summary = "executive_orders_pdf.scripts.pdf_summary:main"
+update-readme = "executive_orders_pdf.scripts.update_readme:main"
+
+[project.urls]
+Homepage = "https://github.com/thehappydinoa/executive-orders-pdf"
+Repository = "https://github.com/thehappydinoa/executive-orders-pdf"
+Issues = "https://github.com/thehappydinoa/executive-orders-pdf/issues"
+
 [tool.black]
 line-length = 88
-target-version = ['py38']
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+target-version = ['py39']
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -25,3 +75,29 @@ asyncio_mode = "strict"
 [tool.isort]
 profile = "black"
 line_length = 88
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "examples"]
+
+[tool.coverage.run]
+source = ["executive_orders_pdf"]
+omit = ["tests/*", "examples/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]

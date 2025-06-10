@@ -43,8 +43,9 @@ def test_load_config_custom():
     }
 
     # Mock the file operations
-    with patch("builtins.open", MagicMock()), patch(
-        "yaml.safe_load", return_value=config_data
+    with (
+        patch("builtins.open", MagicMock()),
+        patch("yaml.safe_load", return_value=config_data),
     ):
         # Mock Path.exists to return True
         with patch.object(Path, "exists", return_value=True):
