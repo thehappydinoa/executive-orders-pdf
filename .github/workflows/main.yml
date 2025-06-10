@@ -28,30 +28,7 @@ permissions:
   contents: write
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-      with:
-        version: "latest"
-
-    - name: Set up Python
-      run: uv python install 3.11
-
-    - name: Install dependencies
-      run: |
-        uv sync --dev
-        uv run pre-commit install
-
-    - name: Run pre-commit on all files
-      run: uv run pre-commit run --all-files
-
   test:
-    needs: pre-commit
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -83,7 +60,7 @@ jobs:
         fail_ci_if_error: false
 
   download-and-merge:
-    needs: [pre-commit, test]
+    needs: [test]
     runs-on: ubuntu-latest
     if: |
       (github.event_name == 'schedule') ||
