@@ -7,11 +7,12 @@ It scans for PDFs, extracts metadata, and saves the information as JSON.
 import argparse
 import glob
 from pathlib import Path
+from typing import Any
 
 from executive_orders_pdf.utils import ConfigUtils, FileSystemUtils, PDFUtils, console
 
 
-def main(priority_president="trump"):
+def main(priority_president: str = "trump") -> list[dict[str, Any]]:
     """
     Main function to scan for PDFs and generate summary information.
 
@@ -40,7 +41,7 @@ def main(priority_president="trump"):
             pdf_summaries.append(info)
 
     # Sort with priority president's executive orders first, then by year (descending)
-    def sort_key(x):
+    def sort_key(x: dict[str, Any]) -> tuple[int, int, str]:
         # Normalize names for comparison
         president_name = x["president"].lower()
         priority_name = priority_president.lower()

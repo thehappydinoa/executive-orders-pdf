@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from pypdf import PdfReader, PdfWriter
 from rich.console import Console
@@ -17,7 +17,7 @@ class PDFUtils:
     """Common PDF-related utility functions."""
 
     @staticmethod
-    def get_pdf_info(pdf_path: Path) -> Optional[Dict]:
+    def get_pdf_info(pdf_path: Path) -> Optional[dict[str, Any]]:
         """
         Extract metadata from a PDF file.
 
@@ -121,7 +121,7 @@ class FileSystemUtils:
         directory.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
-    def move_files_to_directory(files: List[Path], target_dir: Path) -> List[Path]:
+    def move_files_to_directory(files: list[Path], target_dir: Path) -> list[Path]:
         """
         Move files to a target directory.
 
@@ -156,7 +156,7 @@ class ConfigUtils:
             Dictionary with configuration
         """
         try:
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
             console.print(
@@ -168,7 +168,7 @@ class ConfigUtils:
             return {}
 
     @staticmethod
-    def save_json_config(config: Dict, config_path: Path) -> None:
+    def save_json_config(config: list[dict[Any, Any]], config_path: Path) -> None:
         """
         Save configuration to a JSON file.
 

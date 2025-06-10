@@ -12,7 +12,7 @@ from pathlib import Path
 from executive_orders_pdf.utils import ConfigUtils, FileSystemUtils, console
 
 
-def main(priority_president="trump"):
+def main(priority_president: str = "trump") -> None:
     """
     Main function to update the README.md with PDF summary information.
 
@@ -30,7 +30,7 @@ def main(priority_president="trump"):
 
     # Read the existing README
     try:
-        with open("README.md", "r", encoding="utf-8") as f:
+        with open("README.md", encoding="utf-8") as f:
             readme_content = f.read()
     except FileNotFoundError:
         console.print("[red]Error: README.md not found[/red]")

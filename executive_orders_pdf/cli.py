@@ -2,7 +2,7 @@
 
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import click
 import yaml
@@ -16,9 +16,9 @@ from executive_orders_pdf.utils import FileSystemUtils, console
 install()
 
 
-def load_config(config_file: Optional[str] = None) -> Dict[str, Any]:
+def load_config(config_file: Optional[str] = None) -> dict[str, Any]:
     """Load configuration from a YAML file."""
-    default_config: Dict[str, Dict[str, Any]] = {
+    default_config: dict[str, dict[str, Any]] = {
         "download": {
             "concurrent_downloads": 5,
             "retry_attempts": 3,
@@ -36,7 +36,7 @@ def load_config(config_file: Optional[str] = None) -> Dict[str, Any]:
 
     if config_file and Path(config_file).exists():
         try:
-            with open(config_file, "r") as f:
+            with open(config_file) as f:
                 user_config = yaml.safe_load(f)
                 if user_config:
                     # Deep merge user config with default config

@@ -7,7 +7,6 @@ repos:
     -   id: check-yaml
     -   id: check-json
     -   id: check-toml
-    -   id: check-xml
     -   id: check-added-large-files
         args: ['--maxkb=10000']  # 10MB limit
     -   id: check-case-conflict
@@ -16,7 +15,12 @@ repos:
     -   id: check-docstring-first
     -   id: check-executables-have-shebangs
     -   id: check-shebang-scripts-are-executable
-    -   id: requirements-txt-fixer
+
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.20.0
+    hooks:
+    -   id: pyupgrade
+        args: ['--py39-plus']
 
 -   repo: https://github.com/psf/black
     rev: 25.1.0
@@ -32,21 +36,21 @@ repos:
         args: ["--profile", "black", "--line-length=88"]
 
 -   repo: https://github.com/pycqa/flake8
-    rev: 7.1.2
+    rev: 7.2.0
     hooks:
     -   id: flake8
         additional_dependencies: [flake8-bugbear==24.2.6, flake8-docstrings==1.7.0]
         args: ["--max-line-length=88", "--ignore=E501,W503,D100,D101,D102,D103,D104,D105,D106,D107,D401,D205,D202"]
 
 -   repo: https://github.com/pycqa/bandit
-    rev: 1.8.0
+    rev: 1.8.3
     hooks:
     -   id: bandit
         args: ["-r", "executive_orders_pdf/"]
         exclude: ^tests/
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.0
+    rev: v1.16.0
     hooks:
     -   id: mypy
         additional_dependencies: [types-requests, types-PyYAML, types-aiofiles]

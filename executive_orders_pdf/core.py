@@ -4,7 +4,6 @@ import asyncio
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import List, Set
 
 import aiofiles
 import aiohttp
@@ -37,8 +36,8 @@ class PDFDownloader:
         self.concurrent_downloads = concurrent_downloads
         self.semaphore = asyncio.Semaphore(concurrent_downloads)
         self.ua = UserAgent()
-        self.downloaded_files: Set[Path] = set()
-        self.failed_downloads: Set[str] = set()
+        self.downloaded_files: set[Path] = set()
+        self.failed_downloads: set[str] = set()
         console.print(
             f"[blue]Initialized PDFDownloader with {concurrent_downloads} concurrent downloads[/blue]"
         )
@@ -108,7 +107,7 @@ class PDFDownloader:
                 local_filename.unlink()
             raise
 
-    async def download_all(self, urls: List[str]) -> List[Path]:
+    async def download_all(self, urls: list[str]) -> list[Path]:
         """
         Download multiple PDFs concurrently with enhanced error handling.
 
@@ -147,7 +146,7 @@ class PDFDownloader:
         return successful_downloads
 
 
-async def extract_pdf_links(html_file: str, headers: dict) -> List[str]:
+async def extract_pdf_links(html_file: str, headers: dict) -> list[str]:
     """
     Extract PDF links from an HTML file or URL.
 
@@ -163,7 +162,7 @@ async def extract_pdf_links(html_file: str, headers: dict) -> List[str]:
             async with session.get(html_file) as response:
                 content = await response.text()
     else:
-        with open(html_file, "r", encoding="utf-8") as f:
+        with open(html_file, encoding="utf-8") as f:
             content = f.read()
 
     soup = BeautifulSoup(content, "html.parser")
@@ -174,7 +173,7 @@ async def extract_pdf_links(html_file: str, headers: dict) -> List[str]:
     ]
 
 
-def merge_pdfs(pdf_files: Set[Path], output: Path) -> None:
+def merge_pdfs(pdf_files: set[Path], output: Path) -> None:
     """
     Merge multiple PDFs into a single file with deterministic output.
     PDFs are sorted by Federal Register document number in descending order (newest first).
