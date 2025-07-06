@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from aiohttp import ClientSession
+
 from executive_orders_pdf import PDFDownloader
-from rich.progress import Progress
 
 
 @pytest.fixture
@@ -87,25 +87,27 @@ async def test_download_file_new_file(download_dir):
 
 
 @pytest.mark.asyncio
-async def test_download_file_existing_file(download_dir, mock_client_session):
+async def test_download_file_existing_file(download_dir):
     """Test downloading a file that already exists."""
     # Create a mock file that "exists"
     url = "https://example.com/existing.pdf"
     existing_file = download_dir / "existing.pdf"
 
-    # Create and configure the file
-    with open(existing_file, "w") as f:
-        f.write("Existing content")
+    # Create and configure the file with proper PDF content
+    with open(existing_file, "wb") as f:
+        # Write a minimal PDF header so it passes verification
+        f.write(b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n")
 
-    # Create downloader and download file
+    # Create downloader
     downloader = PDFDownloader(download_dir=download_dir)
-    result = await downloader.download_file(mock_client_session, url)
+
+    # Mock the PDF verification to return True for existing file
+    with patch("executive_orders_pdf.utils.PDFUtils.verify_pdf", return_value=True):
+        result = await downloader.download_file(None, url)
 
     # Assertions
     assert result == existing_file
     assert existing_file in downloader.downloaded_files
-    # Session.get should not be called since file exists
-    mock_client_session.get.assert_not_called()
 
 
 # Use monkeypatch to bypass the actual download but keep the progress tracking
