@@ -3,15 +3,15 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import main
 import pytest
-from main import clean_pdf_for_deterministic_output, extract_pdf_links, merge_pdfs
+from executive_orders_pdf import extract_pdf_links, merge_pdfs
+from executive_orders_pdf.utils import PDFUtils
 from pypdf import PdfReader, PdfWriter
 
 
 # Patch the extract_pdf_links function completely for the test
 @pytest.mark.asyncio
-@patch("main.extract_pdf_links")
+@patch("executive_orders_pdf.extract_pdf_links")
 async def test_extract_pdf_links_from_url(mock_extract_links):
     """Test extracting PDF links from a URL."""
     # Expected PDF links
@@ -24,7 +24,7 @@ async def test_extract_pdf_links_from_url(mock_extract_links):
     mock_extract_links.return_value = expected_links
 
     # Call the function (the patched version)
-    result = await main.extract_pdf_links("https://example.com/page", {})
+    result = await extract_pdf_links("https://example.com/page", {})
 
     # Assertions
     assert result == expected_links
@@ -77,11 +77,11 @@ def test_clean_pdf_for_deterministic_output():
 
     # Create the patches
     with (
-        patch("main.PdfReader", return_value=mock_reader),
-        patch("main.PdfWriter", return_value=mock_writer),
+        patch("executive_orders_pdf.utils.PdfReader", return_value=mock_reader),
+        patch("executive_orders_pdf.utils.PdfWriter", return_value=mock_writer),
     ):
         # Call the function
-        result = clean_pdf_for_deterministic_output(Path("test.pdf"))
+        result = PDFUtils.clean_pdf_for_deterministic_output(Path("test.pdf"))
 
     # Assertions
     assert result == mock_writer
@@ -112,8 +112,8 @@ def test_merge_pdfs():
 
     # Create the patches
     with (
-        patch("main.clean_pdf_for_deterministic_output", side_effect=mock_writers),
-        patch("main.PdfWriter", return_value=mock_merger),
+        patch("executive_orders_pdf.utils.PDFUtils.clean_pdf_for_deterministic_output", side_effect=mock_writers),
+        patch("executive_orders_pdf.core.PdfWriter", return_value=mock_merger),
         patch("builtins.open"),
     ):
         # Call the function
