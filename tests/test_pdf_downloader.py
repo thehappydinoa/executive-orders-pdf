@@ -6,8 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from aiohttp import ClientSession
-from executive_orders_pdf import PDFDownloader
 from rich.progress import Progress
+
+from executive_orders_pdf import PDFDownloader
 
 
 @pytest.fixture

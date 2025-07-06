@@ -4,9 +4,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pypdf import PdfReader, PdfWriter
+
 from executive_orders_pdf import extract_pdf_links, merge_pdfs
 from executive_orders_pdf.utils import PDFUtils
-from pypdf import PdfReader, PdfWriter
 
 
 # Patch the extract_pdf_links function completely for the test
@@ -112,7 +113,10 @@ def test_merge_pdfs():
 
     # Create the patches
     with (
-        patch("executive_orders_pdf.utils.PDFUtils.clean_pdf_for_deterministic_output", side_effect=mock_writers),
+        patch(
+            "executive_orders_pdf.utils.PDFUtils.clean_pdf_for_deterministic_output",
+            side_effect=mock_writers,
+        ),
         patch("executive_orders_pdf.core.PdfWriter", return_value=mock_merger),
         patch("builtins.open"),
     ):
