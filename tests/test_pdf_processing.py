@@ -1,17 +1,18 @@
 """Tests for PDF processing functions."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-import main
 import pytest
-from main import clean_pdf_for_deterministic_output, extract_pdf_links, merge_pdfs
 from pypdf import PdfReader, PdfWriter
 
+from executive_orders_pdf.core import extract_pdf_links, merge_pdfs
+from executive_orders_pdf.utils import PDFUtils
 
-# Patch the extract_pdf_links function completely for the test
+
+# Patch the extract_pdf_links function to avoid complex async mocking
 @pytest.mark.asyncio
-@patch("main.extract_pdf_links")
+@patch("tests.test_pdf_processing.extract_pdf_links", new_callable=AsyncMock)
 async def test_extract_pdf_links_from_url(mock_extract_links):
     """Test extracting PDF links from a URL."""
     # Expected PDF links
@@ -20,11 +21,11 @@ async def test_extract_pdf_links_from_url(mock_extract_links):
         "https://www.govinfo.gov/content/pkg/FR-2023-01-21/pdf/2023-05678.pdf",
     ]
 
-    # Set up the async mock to return our expected links
+    # Configure the async mock to return our expected links
     mock_extract_links.return_value = expected_links
 
     # Call the function (the patched version)
-    result = await main.extract_pdf_links("https://example.com/page", {})
+    result = await extract_pdf_links("https://example.com/page", {})
 
     # Assertions
     assert result == expected_links
@@ -75,13 +76,13 @@ def test_clean_pdf_for_deterministic_output():
     # Mock PdfWriter
     mock_writer = MagicMock(spec=PdfWriter)
 
-    # Create the patches
+    # Create the patches - use the correct module path
     with (
-        patch("main.PdfReader", return_value=mock_reader),
-        patch("main.PdfWriter", return_value=mock_writer),
+        patch("executive_orders_pdf.utils.PdfReader", return_value=mock_reader),
+        patch("executive_orders_pdf.utils.PdfWriter", return_value=mock_writer),
     ):
         # Call the function
-        result = clean_pdf_for_deterministic_output(Path("test.pdf"))
+        result = PDFUtils.clean_pdf_for_deterministic_output(Path("test.pdf"))
 
     # Assertions
     assert result == mock_writer
@@ -96,8 +97,8 @@ def test_clean_pdf_for_deterministic_output():
 
 def test_merge_pdfs():
     """Test merging multiple PDFs."""
-    # Create mock PDF files
-    pdf_files = {Path("file1.pdf"), Path("file2.pdf"), Path("file3.pdf")}
+    # Create mock PDF files with proper FR document format
+    pdf_files = {Path("2025-01801.pdf"), Path("2025-01802.pdf"), Path("2025-01803.pdf")}
 
     # Create mock writers returned by clean_pdf_for_deterministic_output
     mock_writers = []
@@ -110,10 +111,22 @@ def test_merge_pdfs():
     # Create mock merged PDF writer
     mock_merger = MagicMock(spec=PdfWriter)
 
+    # Mock PdfReader to simulate PDF content
+    mock_reader = MagicMock()
+    mock_page = MagicMock()
+    mock_page.extract_text.return_value = (
+        "Executive Order\nDated: January 21, 2025\nSigned by the President"
+    )
+    mock_reader.pages = [mock_page]
+
     # Create the patches
     with (
-        patch("main.clean_pdf_for_deterministic_output", side_effect=mock_writers),
-        patch("main.PdfWriter", return_value=mock_merger),
+        patch(
+            "executive_orders_pdf.utils.PDFUtils.clean_pdf_for_deterministic_output",
+            side_effect=mock_writers,
+        ),
+        patch("executive_orders_pdf.core.PdfWriter", return_value=mock_merger),
+        patch("executive_orders_pdf.core.PdfReader", return_value=mock_reader),
         patch("builtins.open"),
     ):
         # Call the function

@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 # Import the cli functions - using a try/except to handle potential import issues
 try:
-    from cli import cli, load_config
+    from executive_orders_pdf.cli import cli, load_config
 except ImportError:
     # Skip these tests if cli.py doesn't exist
     pytestmark = pytest.mark.skip("cli.py module not found")
@@ -68,11 +68,14 @@ def test_cli_help():
     # Verify that the command executed successfully
     assert result.exit_code == 0
     # Check for expected help text
-    assert "Downloads and merges PDFs from Federal Register" in result.output
+    assert (
+        "First checks for missing PDFs and downloads them, then merges all PDFs."
+        in result.output
+    )
 
 
-@patch("cli.main")
-@patch("cli.asyncio.run")
+@patch("executive_orders_pdf.cli.download_and_merge")
+@patch("executive_orders_pdf.cli.asyncio.run")
 def test_cli_with_url(mock_run, mock_main):
     """Test CLI with direct URL argument."""
 
@@ -105,16 +108,16 @@ def test_cli_with_url(mock_run, mock_main):
 
     # Verify that mock_main was called with the right parameters
     mock_main.assert_called_once_with(
-        "https://example.com/orders", "output.pdf", "downloads", 3
+        "https://example.com/orders", Path("output.pdf"), Path("downloads"), 3
     )
 
     # Verify asyncio.run was called
     mock_run.assert_called_once()
 
 
-@patch("cli.main")
-@patch("cli.asyncio.run")
-@patch("cli.load_config")
+@patch("executive_orders_pdf.cli.download_and_merge")
+@patch("executive_orders_pdf.cli.asyncio.run")
+@patch("executive_orders_pdf.cli.load_config")
 def test_cli_with_president_and_year(mock_load_config, mock_run, mock_main):
     """Test CLI with president and year options."""
     # Mock the config to return default values
@@ -149,9 +152,9 @@ def test_cli_with_president_and_year(mock_load_config, mock_run, mock_main):
     assert args[0] == expected_url
 
 
-@patch("cli.main")
-@patch("cli.asyncio.run")
-@patch("cli.load_config")
+@patch("executive_orders_pdf.cli.download_and_merge")
+@patch("executive_orders_pdf.cli.asyncio.run")
+@patch("executive_orders_pdf.cli.load_config")
 def test_cli_with_config_file(mock_load_config, mock_run, mock_main):
     """Test CLI with a config file."""
     # Mock the config that would be loaded
@@ -189,13 +192,12 @@ def test_cli_with_config_file(mock_load_config, mock_run, mock_main):
 
     # Verify that mock_main was called with correct params
     expected_url = "https://www.federalregister.gov/presidential-documents/executive-orders/config-president/2024"
-    # Based on CLI code, when both president and year are available, it will generate a filename like:
-    # f"{president}_executive_orders_{year}.pdf"
-    expected_filename = "config-president_executive_orders_2024.pdf"
+    # When using config file, the output filename comes from config, not auto-generated
+    expected_filename = "from_config.pdf"
 
     mock_main.assert_called_once()
     args, kwargs = mock_main.call_args
     assert args[0] == expected_url
-    assert args[1] == expected_filename
-    assert args[2] == "config_downloads"
+    assert args[1] == Path(expected_filename)
+    assert args[2] == Path("config_downloads")
     assert args[3] == 10

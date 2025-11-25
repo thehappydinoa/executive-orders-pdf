@@ -6,8 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from aiohttp import ClientSession
-from main import PDFDownloader
 from rich.progress import Progress
+
+from executive_orders_pdf.core import PDFDownloader
 
 
 @pytest.fixture
@@ -40,8 +41,13 @@ def mock_client_session():
     # Set up the context manager chain
     mock.get.return_value = context_manager
     context_manager.__aenter__.return_value = response
-    response.read = MagicMock()
-    response.read.return_value = b"test content"
+
+    # Make read method return a coroutine (async method)
+    async def mock_read():
+        return b"test PDF content"
+
+    response.read = mock_read
+    response.raise_for_status = MagicMock()
 
     return mock
 
@@ -87,15 +93,21 @@ async def test_download_file_new_file(download_dir):
 
 
 @pytest.mark.asyncio
-async def test_download_file_existing_file(download_dir, mock_client_session):
+@patch("executive_orders_pdf.core.PDFUtils.verify_pdf")
+async def test_download_file_existing_file(
+    mock_verify_pdf, download_dir, mock_client_session
+):
     """Test downloading a file that already exists."""
+    # Mock PDF verification to return True for existing file
+    mock_verify_pdf.return_value = True
+
     # Create a mock file that "exists"
     url = "https://example.com/existing.pdf"
     existing_file = download_dir / "existing.pdf"
 
-    # Create and configure the file
-    with open(existing_file, "w") as f:
-        f.write("Existing content")
+    # Create and configure the file with some content
+    with open(existing_file, "wb") as f:
+        f.write(b"Valid PDF content")
 
     # Create downloader and download file
     downloader = PDFDownloader(download_dir=download_dir)
@@ -104,8 +116,10 @@ async def test_download_file_existing_file(download_dir, mock_client_session):
     # Assertions
     assert result == existing_file
     assert existing_file in downloader.downloaded_files
-    # Session.get should not be called since file exists
+    # Session.get should not be called since file exists and is valid
     mock_client_session.get.assert_not_called()
+    # PDF verification should have been called
+    mock_verify_pdf.assert_called_once_with(existing_file)
 
 
 # Use monkeypatch to bypass the actual download but keep the progress tracking
