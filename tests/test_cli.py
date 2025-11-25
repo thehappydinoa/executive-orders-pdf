@@ -75,7 +75,7 @@ def test_cli_help():
 
 
 @patch("executive_orders_pdf.cli.download_and_merge")
-@patch("executive_orders_pdf.cli.asyncio.run")
+@patch("asyncio.run")
 def test_cli_with_url(mock_run, mock_main):
     """Test CLI with direct URL argument."""
 
@@ -116,7 +116,7 @@ def test_cli_with_url(mock_run, mock_main):
 
 
 @patch("executive_orders_pdf.cli.download_and_merge")
-@patch("executive_orders_pdf.cli.asyncio.run")
+@patch("asyncio.run")
 @patch("executive_orders_pdf.cli.load_config")
 def test_cli_with_president_and_year(mock_load_config, mock_run, mock_main):
     """Test CLI with president and year options."""
@@ -153,7 +153,7 @@ def test_cli_with_president_and_year(mock_load_config, mock_run, mock_main):
 
 
 @patch("executive_orders_pdf.cli.download_and_merge")
-@patch("executive_orders_pdf.cli.asyncio.run")
+@patch("asyncio.run")
 @patch("executive_orders_pdf.cli.load_config")
 def test_cli_with_config_file(mock_load_config, mock_run, mock_main):
     """Test CLI with a config file."""
