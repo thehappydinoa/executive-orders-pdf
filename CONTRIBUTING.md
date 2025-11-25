@@ -5,38 +5,42 @@ Thank you for your interest in contributing to this project! This document provi
 ## Setting Up Development Environment
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/thehappydinoa/executive-orders-pdf.git
    cd executive-orders-pdf
    ```
 
-2. Create and activate a virtual environment:
-   ```bash
-   # On Windows
-   python -m venv venv
-   .\venv\Scripts\activate
+2. Install uv (if not already installed):
 
+   ```bash
    # On macOS/Linux
-   python -m venv venv
-   source venv/bin/activate
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+
+   # On Windows (PowerShell)
+   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
 
-3. Install development dependencies:
+3. Install dependencies:
+
    ```bash
-   pip install -r requirements-dev.txt
+   uv sync --dev
    ```
 
 4. Set up pre-commit hooks:
+
    ```bash
-   pre-commit install
+   uv run pre-commit install
    ```
 
 ## Code Style
 
 This project uses:
+
 - **Black** for code formatting
 - **isort** for import sorting
 - **flake8** with flake8-bugbear for linting
+- **mypy** for type checking
 
 All of these run automatically when you commit, thanks to pre-commit hooks.
 
@@ -45,7 +49,13 @@ All of these run automatically when you commit, thanks to pre-commit hooks.
 Run the test suite using pytest:
 
 ```bash
-pytest
+uv run pytest
+```
+
+With coverage:
+
+```bash
+uv run pytest --cov=executive_orders_pdf --cov-report=term-missing
 ```
 
 ## Pull Request Process
