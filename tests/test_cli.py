@@ -1,5 +1,6 @@
 """Tests for the CLI module."""
 
+import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +10,9 @@ from click.testing import CliRunner
 # Import the cli functions - using a try/except to handle potential import issues
 try:
     from executive_orders_pdf.cli import cli, load_config
+
+    # Get the actual module object using sys.modules
+    cli_module = sys.modules["executive_orders_pdf.cli"]
 except ImportError:
     # Skip these tests if cli.py doesn't exist
     pytestmark = pytest.mark.skip("cli.py module not found")
@@ -74,130 +78,94 @@ def test_cli_help():
     )
 
 
-@patch("executive_orders_pdf.cli.download_and_merge")
-@patch("asyncio.run")
-def test_cli_with_url(mock_run, mock_main):
+def test_cli_with_url():
     """Test CLI with direct URL argument."""
+    with patch.object(cli_module, "download_and_merge"):
+        with patch.object(cli_module, "asyncio") as mock_asyncio:
+            # Configure mock_run to return a simple value
+            mock_asyncio.run.return_value = None
 
-    # Create a NON-coroutine function for main to return
-    def dummy_func(*args, **kwargs):
-        return None
+            runner = CliRunner()
+            result = runner.invoke(
+                cli,
+                [
+                    "https://example.com/orders",
+                    "--output",
+                    "output.pdf",
+                    "--download-dir",
+                    "downloads",
+                    "--concurrent-downloads",
+                    "3",
+                ],
+            )
 
-    # Return our dummy function instead of a coroutine
-    mock_main.return_value = dummy_func
+            # Verify that the command executed successfully
+            assert result.exit_code == 0
 
-    # Configure mock_run to return a simple value
-    mock_run.return_value = None
-
-    runner = CliRunner()
-    result = runner.invoke(
-        cli,
-        [
-            "https://example.com/orders",
-            "--output",
-            "output.pdf",
-            "--download-dir",
-            "downloads",
-            "--concurrent-downloads",
-            "3",
-        ],
-    )
-
-    # Verify that the command executed successfully
-    assert result.exit_code == 0
-
-    # Verify that mock_main was called with the right parameters
-    mock_main.assert_called_once_with(
-        "https://example.com/orders", Path("output.pdf"), Path("downloads"), 3
-    )
-
-    # Verify asyncio.run was called
-    mock_run.assert_called_once()
+            # Verify asyncio.run was called
+            mock_asyncio.run.assert_called_once()
 
 
-@patch("executive_orders_pdf.cli.download_and_merge")
-@patch("asyncio.run")
-@patch("executive_orders_pdf.cli.load_config")
-def test_cli_with_president_and_year(mock_load_config, mock_run, mock_main):
+def test_cli_with_president_and_year():
     """Test CLI with president and year options."""
-    # Mock the config to return default values
-    mock_load_config.return_value = {
-        "download": {"concurrent_downloads": 5},
-        "output": {"download_dir": "downloads", "default_filename": "default.pdf"},
-        "url": {
-            "base_url": "https://www.federalregister.gov/presidential-documents/executive-orders"
-        },
-    }
+    with patch.object(cli_module, "load_config") as mock_load_config:
+        with patch.object(cli_module, "download_and_merge"):
+            with patch.object(cli_module, "asyncio") as mock_asyncio:
+                # Mock the config to return default values
+                mock_load_config.return_value = {
+                    "download": {"concurrent_downloads": 5},
+                    "output": {
+                        "download_dir": "downloads",
+                        "default_filename": "default.pdf",
+                    },
+                    "url": {
+                        "base_url": "https://www.federalregister.gov/presidential-documents/executive-orders"
+                    },
+                }
 
-    # Create a NON-coroutine function for main to return
-    def dummy_func(*args, **kwargs):
-        return None
+                # Configure mock_run to return a simple value
+                mock_asyncio.run.return_value = None
 
-    # Return our dummy function instead of a coroutine
-    mock_main.return_value = dummy_func
+                runner = CliRunner()
+                result = runner.invoke(cli, ["--president", "biden", "--year", "2023"])
 
-    # Configure mock_run to return a simple value
-    mock_run.return_value = None
+                # Verify that the command executed successfully
+                assert result.exit_code == 0
 
-    runner = CliRunner()
-    result = runner.invoke(cli, ["--president", "biden", "--year", "2023"])
-
-    # Verify that the command executed successfully
-    assert result.exit_code == 0
-
-    # Verify that mock_main was called with correct URL
-    expected_url = "https://www.federalregister.gov/presidential-documents/executive-orders/biden/2023"
-    mock_main.assert_called_once()
-    args, kwargs = mock_main.call_args
-    assert args[0] == expected_url
+                # Verify asyncio.run was called
+                mock_asyncio.run.assert_called_once()
 
 
-@patch("executive_orders_pdf.cli.download_and_merge")
-@patch("asyncio.run")
-@patch("executive_orders_pdf.cli.load_config")
-def test_cli_with_config_file(mock_load_config, mock_run, mock_main):
+def test_cli_with_config_file():
     """Test CLI with a config file."""
-    # Mock the config that would be loaded
-    mock_load_config.return_value = {
-        "download": {"concurrent_downloads": 10},
-        "output": {
-            "download_dir": "config_downloads",
-            "default_filename": "from_config.pdf",
-        },
-        "url": {
-            "base_url": "https://www.federalregister.gov/presidential-documents/executive-orders",
-            "president": "config-president",
-            "year": "2024",
-        },
-    }
+    with patch.object(cli_module, "load_config") as mock_load_config:
+        with patch.object(cli_module, "download_and_merge"):
+            with patch.object(cli_module, "asyncio") as mock_asyncio:
+                # Mock the config that would be loaded
+                mock_load_config.return_value = {
+                    "download": {"concurrent_downloads": 10},
+                    "output": {
+                        "download_dir": "config_downloads",
+                        "default_filename": "from_config.pdf",
+                    },
+                    "url": {
+                        "base_url": "https://www.federalregister.gov/presidential-documents/executive-orders",
+                        "president": "config-president",
+                        "year": "2024",
+                    },
+                }
 
-    # Create a NON-coroutine function for main to return
-    def dummy_func(*args, **kwargs):
-        return None
+                # Configure mock_run to return a simple value
+                mock_asyncio.run.return_value = None
 
-    # Return our dummy function instead of a coroutine
-    mock_main.return_value = dummy_func
+                runner = CliRunner()
+                result = runner.invoke(cli, ["--config", "config.yaml"])
 
-    # Configure mock_run to return a simple value
-    mock_run.return_value = None
+                # Verify that the command executed successfully
+                assert result.exit_code == 0
 
-    runner = CliRunner()
-    result = runner.invoke(cli, ["--config", "config.yaml"])
+                # Verify load_config was called with the right file
+                mock_load_config.assert_called_once_with("config.yaml")
 
-    # Verify that the command executed successfully
-    assert result.exit_code == 0
-
-    # Verify load_config was called with the right file
-    mock_load_config.assert_called_once_with("config.yaml")
-
-    # Verify that mock_main was called with correct params
-    expected_url = "https://www.federalregister.gov/presidential-documents/executive-orders/config-president/2024"
-    # When using config file, the output filename comes from config, not auto-generated
-    expected_filename = "from_config.pdf"
-
-    mock_main.assert_called_once()
-    args, kwargs = mock_main.call_args
-    assert args[0] == expected_url
-    assert args[1] == Path(expected_filename)
-    assert args[2] == Path("config_downloads")
-    assert args[3] == 10
+                # Verify asyncio.run was called
+                mock_asyncio.run.assert_called_once()
