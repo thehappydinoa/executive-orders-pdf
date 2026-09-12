@@ -2,7 +2,7 @@
 
 import asyncio
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 import yaml
@@ -16,7 +16,7 @@ from executive_orders_pdf.utils import FileSystemUtils, console
 install()
 
 
-def load_config(config_file: Optional[str] = None) -> dict[str, Any]:
+def load_config(config_file: str | None = None) -> dict[str, Any]:
     """Load configuration from a YAML file."""
     default_config: dict[str, dict[str, Any]] = {
         "download": {
@@ -62,13 +62,13 @@ def load_config(config_file: Optional[str] = None) -> dict[str, Any]:
 @click.option("--president", "-p", help="President name (e.g., donald-trump)")
 @click.option("--year", "-y", help="Year to download executive orders for")
 def cli(
-    html_file: Optional[str] = None,
-    output: Optional[str] = None,
-    download_dir: Optional[str] = None,
-    concurrent_downloads: Optional[int] = None,
-    config: Optional[str] = None,
-    president: Optional[str] = None,
-    year: Optional[str] = None,
+    html_file: str | None = None,
+    output: str | None = None,
+    download_dir: str | None = None,
+    concurrent_downloads: int | None = None,
+    config: str | None = None,
+    president: str | None = None,
+    year: str | None = None,
 ) -> None:
     """First checks for missing PDFs and downloads them, then merges all PDFs."""
     # Load configuration

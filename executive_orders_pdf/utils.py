@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pypdf import PdfReader, PdfWriter
 from rich.console import Console
@@ -17,7 +17,7 @@ class PDFUtils:
     """Common PDF-related utility functions."""
 
     @staticmethod
-    def get_pdf_info(pdf_path: Path) -> Optional[dict[str, Any]]:
+    def get_pdf_info(pdf_path: Path) -> dict[str, Any] | None:
         """
         Extract metadata from a PDF file.
 

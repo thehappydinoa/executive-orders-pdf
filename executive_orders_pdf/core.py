@@ -128,7 +128,7 @@ class PDFDownloader:
 
         # Process results and log failures
         successful_downloads: list[Path] = []
-        for url, result in zip(urls, results):
+        for url, result in zip(urls, results, strict=False):
             if isinstance(result, Exception):
                 console.print(f"[red]Failed to download {url}: {str(result)}[/red]")
                 self.failed_downloads.add(url)
