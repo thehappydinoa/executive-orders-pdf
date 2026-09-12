@@ -176,9 +176,10 @@ async def extract_pdf_links(html_file: str, headers: dict) -> list[str]:
             continue
 
         parsed_href = urlparse(href)
+        host = parsed_href.hostname or ""
         if (
             parsed_href.scheme in {"http", "https"}
-            and parsed_href.netloc == "www.govinfo.gov"
+            and (host == "govinfo.gov" or host.endswith(".govinfo.gov"))
         ):
             pdf_links.append(href)
 
