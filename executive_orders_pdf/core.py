@@ -187,8 +187,9 @@ async def extract_pdf_links(html_file: str, headers: dict) -> list[str]:
             host == "govinfo.gov" or host.endswith(".govinfo.gov")
         ):
             pdf_links.append(href)
-        elif not parsed_href.scheme and not host and parsed_href.path.startswith("/"):
-            relative_url = f"https://www.govinfo.gov{parsed_href.path}"
+        elif not parsed_href.scheme and not host:
+            normalized_path = "/" + parsed_href.path.lstrip("/")
+            relative_url = f"https://www.govinfo.gov{normalized_path}"
             if parsed_href.query:
                 relative_url += f"?{parsed_href.query}"
             if parsed_href.fragment:
