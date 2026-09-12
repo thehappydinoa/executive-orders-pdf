@@ -135,7 +135,10 @@ class PDFDownloader:
             elif isinstance(result, Path):
                 successful_downloads.append(result)
             else:
-                raise result
+                console.print(
+                    f"[red]Failed to download {url}: unexpected result type {type(result).__name__}[/red]"
+                )
+                self.failed_downloads.add(url)
 
         console.print(
             f"[blue]Download complete. [green]Successful: {len(successful_downloads)}[/green], "
@@ -172,7 +175,7 @@ async def extract_pdf_links(html_file: str, headers: dict) -> list[str]:
     pdf_links: list[str] = []
     for link in soup.find_all("a", href=True):
         href = link.get("href")
-        if not isinstance(href, str) or not href.endswith(".pdf"):
+        if not isinstance(href, str):
             continue
 
         parsed_href = urlparse(href)
@@ -180,6 +183,7 @@ async def extract_pdf_links(html_file: str, headers: dict) -> list[str]:
         if (
             parsed_href.scheme in {"http", "https"}
             and (host == "govinfo.gov" or host.endswith(".govinfo.gov"))
+            and parsed_href.path.endswith(".pdf")
         ):
             pdf_links.append(href)
 
