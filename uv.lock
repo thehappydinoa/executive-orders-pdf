@@ -814,7 +814,7 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=0.25.3" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "ruff", specifier = ">=0.12.11" },
-    { name = "ty" },
+    { name = "ty", specifier = ">=0.0.80" },
     { name = "types-aiofiles" },
     { name = "types-pyyaml" },
     { name = "types-requests" },
