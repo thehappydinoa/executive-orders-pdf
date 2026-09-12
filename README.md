@@ -248,10 +248,9 @@ We use several tools to maintain code quality:
 uv run pre-commit run --all-files
 
 # Or individual tools:
-uv run black .                    # Format code
-uv run isort .                    # Sort imports
-uv run flake8                     # Lint code
-uv run mypy executive_orders_pdf  # Type checking
+uv run ruff format .              # Format code
+uv run ruff check .               # Lint and sort imports
+uv run ty check                   # Type checking
 uv run bandit -r executive_orders_pdf  # Security scan
 ```
 

@@ -42,8 +42,8 @@ def main(priority_president: str = "trump") -> None:
     pdf_table += "|:----------|:-----|:------|:-----|:-------------|:---------|\n"
 
     for pdf in pdf_summaries:
-        pdf_table += f'| {pdf["president"]} | {pdf["year"]} | {pdf["pages"]} | {pdf["size_mb"]} MB | {pdf["last_modified"]} | '
-        pdf_table += f'[Download](combined_pdfs/{pdf["filename"]}) |\n'
+        pdf_table += f"| {pdf['president']} | {pdf['year']} | {pdf['pages']} | {pdf['size_mb']} MB | {pdf['last_modified']} | "
+        pdf_table += f"[Download](combined_pdfs/{pdf['filename']}) |\n"
 
     # Get total statistics
     total_pages = sum(pdf.get("pages", 0) for pdf in pdf_summaries)

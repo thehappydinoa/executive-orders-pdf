@@ -126,9 +126,9 @@ class PDFDownloader:
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Process results and log failures
-        successful_downloads = []
+        successful_downloads: list[Path] = []
         for url, result in zip(urls, results):
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 console.print(f"[red]Failed to download {url}: {str(result)}[/red]")
                 self.failed_downloads.add(url)
             else:
@@ -166,11 +166,13 @@ async def extract_pdf_links(html_file: str, headers: dict) -> list[str]:
             content = f.read()
 
     soup = BeautifulSoup(content, "html.parser")
-    return [
-        link["href"]
-        for link in soup.find_all("a", href=True)
-        if link["href"].endswith(".pdf") and "govinfo.gov" in link["href"]
-    ]
+    pdf_links: list[str] = []
+    for link in soup.find_all("a", href=True):
+        href = link.get("href")
+        if isinstance(href, str) and href.endswith(".pdf") and "govinfo.gov" in href:
+            pdf_links.append(href)
+
+    return pdf_links
 
 
 def merge_pdfs(pdf_files: set[Path], output: Path) -> None:
@@ -349,7 +351,7 @@ if __name__ == "__main__":
 
     # Forward to cli.py if it exists
     try:
-        from cli import cli
+        from executive_orders_pdf.cli import cli
 
         # If no arguments were provided, show help
         if len(sys.argv) == 1:
