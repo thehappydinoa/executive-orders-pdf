@@ -1,5 +1,6 @@
 """Common utility functions and classes used across the project."""
 
+import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -86,6 +87,61 @@ class PDFUtils:
         return writer
 
     @staticmethod
+    def compute_file_hash(file_path: Path) -> str | None:
+        """
+        Compute SHA256 hash for a file.
+
+        Args:
+            file_path: Path to the file
+
+        Returns:
+            SHA256 hash string or None if file cannot be read
+        """
+        try:
+            hasher = hashlib.sha256()
+            with open(file_path, "rb") as f:
+                while chunk := f.read(8192):
+                    hasher.update(chunk)
+            return hasher.hexdigest()
+        except OSError as e:
+            console.print(
+                f"[yellow]Warning: Failed to hash {file_path}: {str(e)}[/yellow]"
+            )
+            return None
+
+    @staticmethod
+    def quick_pdf_sanity_check(file_path: Path) -> bool:
+        """
+        Run a lightweight sanity check before expensive PDF operations.
+
+        Args:
+            file_path: Path to the PDF file
+
+        Returns:
+            bool: True if file looks like a PDF, False otherwise
+        """
+        try:
+            if not file_path.exists() or file_path.stat().st_size < 5:
+                return False
+            with open(file_path, "rb") as f:
+                return f.read(5) == b"%PDF-"
+        except OSError:
+            return False
+
+    @staticmethod
+    def quick_pdf_sanity_check_bytes(content: bytes) -> bool:
+        """
+        Run a lightweight sanity check on raw bytes.
+
+        Args:
+            content: Raw file content
+
+        Returns:
+            bool: True if bytes look like a PDF, False otherwise
+        """
+        return len(content) >= 5 and content.startswith(b"%PDF-")
+
+    @staticmethod
     def verify_pdf(file_path: Path) -> bool:
         """
         Verify that a PDF is valid and not corrupted.
@@ -163,12 +219,12 @@ class ConfigUtils:
                 f"[yellow]Warning: Config file {config_path} not found[/yellow]"
             )
             return {}
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError):
             console.print(f"[red]Error: Invalid JSON in {config_path}[/red]")
             return {}
 
     @staticmethod
-    def save_json_config(config: list[dict[Any, Any]], config_path: Path) -> None:
+    def save_json_config(config: Any, config_path: Path) -> None:
         """
         Save configuration to a JSON file.
 

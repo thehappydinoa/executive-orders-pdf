@@ -95,10 +95,16 @@ def test_clean_pdf_for_deterministic_output():
     assert mock_writer.metadata is None
 
 
-def test_merge_pdfs():
+def test_merge_pdfs(tmp_path):
     """Test merging multiple PDFs."""
     # Create mock PDF files with proper FR document format
-    pdf_files = {Path("2025-01801.pdf"), Path("2025-01802.pdf"), Path("2025-01803.pdf")}
+    pdf_files = {
+        tmp_path / "2025-01801.pdf",
+        tmp_path / "2025-01802.pdf",
+        tmp_path / "2025-01803.pdf",
+    }
+    for pdf_path in pdf_files:
+        pdf_path.write_bytes(b"%PDF-1.4 mock content")
 
     # Create mock writers returned by clean_pdf_for_deterministic_output
     mock_writers = []
@@ -127,10 +133,9 @@ def test_merge_pdfs():
         ),
         patch("executive_orders_pdf.core.PdfWriter", return_value=mock_merger),
         patch("executive_orders_pdf.core.PdfReader", return_value=mock_reader),
-        patch("builtins.open"),
     ):
         # Call the function
-        merge_pdfs(pdf_files, Path("merged.pdf"))
+        merged = merge_pdfs(pdf_files, tmp_path / "merged.pdf")
 
     # Assertions
     # Should have called clean_pdf_for_deterministic_output for each input file
@@ -141,3 +146,4 @@ def test_merge_pdfs():
     assert mock_merger.metadata is None
     mock_merger.write.assert_called_once()
     mock_merger.close.assert_called_once()
+    assert merged is True

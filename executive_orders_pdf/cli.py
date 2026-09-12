@@ -2,6 +2,7 @@
 
 import asyncio
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 import click
@@ -114,13 +115,17 @@ async def download_and_merge(
 ) -> None:
     """Download any missing PDFs and then merge all existing PDFs."""
     console.rule("[bold blue]Federal Register PDF Downloader & Merger")
+    pipeline_start = perf_counter()
 
     # Setup for extraction
     ua = UserAgent()
     headers = {"User-Agent": ua.random}
 
     # Extract PDF links
+    extract_start = perf_counter()
     pdf_links = await extract_pdf_links(html_file, headers)
+    extract_duration = perf_counter() - extract_start
+    console.print(f"[dim]Link extraction completed in {extract_duration:.2f}s[/dim]")
     if not pdf_links:
         console.print("[yellow]No PDF links found to download[/yellow]")
         # Even if no links found, still try to merge existing PDFs
@@ -128,27 +133,49 @@ async def download_and_merge(
         if existing_pdfs:
             console.print(f"[green]Found {len(existing_pdfs)} existing PDFs[/green]")
             console.print(f"[bold]Merging PDFs into: {output}[/bold]")
-            merge_pdfs(existing_pdfs, output)
-            console.print(f"[green]✔ Merged PDF saved as: {output}[/green]")
+            merged = merge_pdfs(existing_pdfs, output)
+            if merged:
+                console.print(f"[green]✔ Merged PDF saved as: {output}[/green]")
+            else:
+                console.print(
+                    f"[green]✔ Merge output already up to date: {output}[/green]"
+                )
         else:
             console.print("[red]No PDFs found to merge[/red]")
+        total_duration = perf_counter() - pipeline_start
+        console.print(f"[dim]Total pipeline completed in {total_duration:.2f}s[/dim]")
         return
 
     console.print(f"[green]Found {len(pdf_links)} PDF links[/green]")
 
     # Setup downloader with progress bar
     downloader = PDFDownloader(download_dir, concurrent_downloads)
+    download_start = perf_counter()
     await downloader.download_all(pdf_links)
+    download_duration = perf_counter() - download_start
+    console.print(
+        f"[dim]Download-and-verify completed in {download_duration:.2f}s[/dim]"
+    )
 
     # Get all PDFs in the download directory, regardless of whether they were just downloaded
     all_pdfs = set(download_dir.glob("*.pdf"))
     if all_pdfs:
         console.print(f"[green]Found {len(all_pdfs)} PDFs in total[/green]")
         console.print(f"[bold]Merging PDFs into: {output}[/bold]")
-        merge_pdfs(all_pdfs, output)
-        console.print(f"[green]✔ Merged PDF saved as: {output}[/green]")
+        merge_start = perf_counter()
+        merged = merge_pdfs(all_pdfs, output)
+        merge_duration = perf_counter() - merge_start
+        if merged:
+            console.print(f"[green]✔ Merged PDF saved as: {output}[/green]")
+        else:
+            console.print(f"[green]✔ Merge output already up to date: {output}[/green]")
+        console.print(
+            f"[dim]Merge orchestration completed in {merge_duration:.2f}s[/dim]"
+        )
     else:
         console.print("[red]No PDFs found to merge[/red]")
+    total_duration = perf_counter() - pipeline_start
+    console.print(f"[dim]Total pipeline completed in {total_duration:.2f}s[/dim]")
 
 
 if __name__ == "__main__":
