@@ -4,6 +4,7 @@ import asyncio
 import re
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 import aiofiles
 import aiohttp
@@ -128,11 +129,13 @@ class PDFDownloader:
         # Process results and log failures
         successful_downloads: list[Path] = []
         for url, result in zip(urls, results):
-            if isinstance(result, BaseException):
+            if isinstance(result, Exception):
                 console.print(f"[red]Failed to download {url}: {str(result)}[/red]")
                 self.failed_downloads.add(url)
-            else:
+            elif isinstance(result, Path):
                 successful_downloads.append(result)
+            else:
+                raise result
 
         console.print(
             f"[blue]Download complete. [green]Successful: {len(successful_downloads)}[/green], "
@@ -169,7 +172,14 @@ async def extract_pdf_links(html_file: str, headers: dict) -> list[str]:
     pdf_links: list[str] = []
     for link in soup.find_all("a", href=True):
         href = link.get("href")
-        if isinstance(href, str) and href.endswith(".pdf") and "govinfo.gov" in href:
+        if not isinstance(href, str) or not href.endswith(".pdf"):
+            continue
+
+        parsed_href = urlparse(href)
+        if (
+            parsed_href.scheme in {"http", "https"}
+            and parsed_href.netloc == "www.govinfo.gov"
+        ):
             pdf_links.append(href)
 
     return pdf_links
