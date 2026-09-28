@@ -1,18 +1,25 @@
 """Core functionality for downloading and merging PDFs from the Federal Register."""
 
 import asyncio
+import hashlib
+import json
+import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
+from time import perf_counter
+from typing import Any
+from urllib.parse import urlparse
 
 import aiofiles
 import aiohttp
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 from pypdf import PdfReader, PdfWriter
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 from executive_orders_pdf.utils import (
+    ConfigUtils,
     FileSystemUtils,
     PDFUtils,
     ProgressTracker,
@@ -33,18 +40,71 @@ class PDFDownloader:
         """
         self.download_dir = Path(download_dir)
         FileSystemUtils.ensure_directory(self.download_dir)
-        self.concurrent_downloads = concurrent_downloads
-        self.semaphore = asyncio.Semaphore(concurrent_downloads)
+
+        cpu_count = os.cpu_count() or 2
+        auto_cap = max(1, cpu_count * 4)
+        self.concurrent_downloads = max(1, min(concurrent_downloads, auto_cap))
+        self.semaphore = asyncio.Semaphore(self.concurrent_downloads)
         self.ua = UserAgent()
         self.downloaded_files: set[Path] = set()
         self.failed_downloads: set[str] = set()
-        console.print(
-            f"[blue]Initialized PDFDownloader with {concurrent_downloads} concurrent downloads[/blue]"
+        self.http_timeout = aiohttp.ClientTimeout(
+            total=120, sock_connect=20, sock_read=60
         )
+        self.download_state_path = self.download_dir / ".download_state.json"
+        self.download_state = self._load_download_state()
+        console.print(
+            f"[blue]Initialized PDFDownloader with {self.concurrent_downloads} concurrent downloads[/blue]"
+        )
+
+    def _load_download_state(self) -> dict[str, dict[str, Any]]:
+        data = ConfigUtils.load_json_config(self.download_state_path)
+        if isinstance(data, dict):
+            return {
+                key: value
+                for key, value in data.items()
+                if isinstance(key, str) and isinstance(value, dict)
+            }
+        return {}
+
+    def _save_download_state(self) -> None:
+        ConfigUtils.save_json_config(self.download_state, self.download_state_path)
+
+    def _build_conditional_headers(self, url: str) -> dict[str, str]:
+        state = self.download_state.get(url, {})
+        headers: dict[str, str] = {}
+        etag = state.get("etag")
+        last_modified = state.get("last_modified")
+        if isinstance(etag, str) and etag:
+            headers["If-None-Match"] = etag
+        if isinstance(last_modified, str) and last_modified:
+            headers["If-Modified-Since"] = last_modified
+        return headers
+
+    def _record_download_state(
+        self,
+        url: str,
+        local_filename: Path,
+        response_headers: dict[str, str],
+        status: str,
+    ) -> None:
+        file_hash = PDFUtils.compute_file_hash(local_filename)
+        if file_hash is None:
+            return
+        self.download_state[url] = {
+            "url": url,
+            "filename": local_filename.name,
+            "etag": response_headers.get("ETag"),
+            "last_modified": response_headers.get("Last-Modified"),
+            "local_hash": file_hash,
+            "local_size": local_filename.stat().st_size,
+            "status": status,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
+        wait=wait_exponential_jitter(initial=1, max=10, jitter=1),
         reraise=True,
     )
     async def download_file(self, session: aiohttp.ClientSession, url: str) -> Path:
@@ -61,35 +121,74 @@ class PDFDownloader:
         Raises:
             Exception: If download fails after retries or PDF is invalid
         """
-        local_filename = self.download_dir / Path(url).name
+        local_filename = self.download_dir / Path(urlparse(url).path).name
         start_time = datetime.now()
+        had_existing_file = local_filename.exists()
+        wrote_new_file = False
 
         try:
             if local_filename.exists() and local_filename.stat().st_size > 0:
-                if PDFUtils.verify_pdf(local_filename):
+                state = self.download_state.get(url)
+                if state and state.get("local_hash") == PDFUtils.compute_file_hash(
+                    local_filename
+                ):
                     console.print(
-                        f"[yellow]Using existing valid file: {local_filename}[/yellow]"
+                        f"[green]Skipping unchanged file from manifest: {local_filename}[/green]"
                     )
                     self.downloaded_files.add(local_filename)
                     return local_filename
-                else:
+                if state is None and PDFUtils.verify_pdf(local_filename):
                     console.print(
-                        f"[yellow]Existing file {local_filename} is invalid, re-downloading[/yellow]"
+                        f"[yellow]Using existing valid file without manifest entry: {local_filename}[/yellow]"
+                    )
+                    self.downloaded_files.add(local_filename)
+                    return local_filename
+                if not PDFUtils.quick_pdf_sanity_check(local_filename):
+                    console.print(
+                        f"[yellow]Existing file {local_filename} failed quick sanity check, re-downloading[/yellow]"
                     )
                     local_filename.unlink()
 
             async with self.semaphore:
-                async with session.get(url) as response:
-                    response.raise_for_status()
-                    async with aiofiles.open(local_filename, "wb") as f:
-                        content = await response.read()
-                        await f.write(content)
+                request_headers = self._build_conditional_headers(url)
+                async with session.get(url, headers=request_headers) as response:
+                    if (
+                        response.status == 304
+                        and local_filename.exists()
+                        and local_filename.stat().st_size > 0
+                    ):
+                        console.print(
+                            f"[green]Not modified (304), using cached file: {local_filename}[/green]"
+                        )
+                        self._record_download_state(
+                            url, local_filename, dict(response.headers), "not_modified"
+                        )
+                        self.downloaded_files.add(local_filename)
+                        return local_filename
 
+                    response.raise_for_status()
+                    content = await response.read()
+                    if not PDFUtils.quick_pdf_sanity_check_bytes(content):
+                        raise ValueError(
+                            f"Downloaded content for {url} is not a valid PDF"
+                        )
+
+                    async with aiofiles.open(local_filename, "wb") as f:
+                        await f.write(content)
+                    wrote_new_file = True
+
+                    if not PDFUtils.quick_pdf_sanity_check(local_filename):
+                        raise ValueError(
+                            f"Downloaded PDF {local_filename} failed quick sanity check"
+                        )
                     if not PDFUtils.verify_pdf(local_filename):
                         raise ValueError(
                             f"Downloaded PDF {local_filename} failed verification"
                         )
 
+                    self._record_download_state(
+                        url, local_filename, dict(response.headers), "downloaded"
+                    )
                     download_time = (datetime.now() - start_time).total_seconds()
                     size_mb = local_filename.stat().st_size / (1024 * 1024)
                     console.print(
@@ -103,7 +202,7 @@ class PDFDownloader:
         except Exception as e:
             self.failed_downloads.add(url)
             console.print(f"[red]Error downloading {url}: {str(e)}[/red]")
-            if local_filename.exists():
+            if wrote_new_file and local_filename.exists() and not had_existing_file:
                 local_filename.unlink()
             raise
 
@@ -120,19 +219,32 @@ class PDFDownloader:
         console.print(f"[blue]Starting download of {len(urls)} PDFs[/blue]")
         headers = {"User-Agent": self.ua.random}
 
+        start = perf_counter()
         with ProgressTracker(len(urls), "Downloading PDFs"):
-            async with aiohttp.ClientSession(headers=headers) as session:
+            connector = aiohttp.TCPConnector(
+                limit=self.concurrent_downloads,
+                limit_per_host=self.concurrent_downloads,
+                ttl_dns_cache=300,
+            )
+            async with aiohttp.ClientSession(
+                headers=headers, timeout=self.http_timeout, connector=connector
+            ) as session:
                 tasks = [self.download_file(session, url) for url in urls]
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Process results and log failures
-        successful_downloads = []
-        for url, result in zip(urls, results):
+        successful_downloads: list[Path] = []
+        for url, result in zip(urls, results, strict=False):
             if isinstance(result, Exception):
                 console.print(f"[red]Failed to download {url}: {str(result)}[/red]")
                 self.failed_downloads.add(url)
-            else:
+            elif isinstance(result, Path):
                 successful_downloads.append(result)
+            else:
+                console.print(
+                    f"[red]Failed to download {url}: unexpected result type {type(result).__name__}[/red]"
+                )
+                self.failed_downloads.add(url)
 
         console.print(
             f"[blue]Download complete. [green]Successful: {len(successful_downloads)}[/green], "
@@ -142,6 +254,12 @@ class PDFDownloader:
             console.print(
                 "[yellow]Failed URLs: " + ", ".join(self.failed_downloads) + "[/yellow]"
             )
+
+        self._save_download_state()
+        download_duration = perf_counter() - start
+        console.print(
+            f"[dim]Download stage completed in {download_duration:.2f}s[/dim]"
+        )
 
         return successful_downloads
 
@@ -166,14 +284,37 @@ async def extract_pdf_links(html_file: str, headers: dict) -> list[str]:
             content = f.read()
 
     soup = BeautifulSoup(content, "html.parser")
-    return [
-        link["href"]
-        for link in soup.find_all("a", href=True)
-        if link["href"].endswith(".pdf") and "govinfo.gov" in link["href"]
-    ]
+    pdf_links: list[str] = []
+    for link in soup.find_all("a", href=True):
+        href = link.get("href")
+        if not isinstance(href, str):
+            continue
+
+        parsed_href = urlparse(href)
+        host = parsed_href.hostname or ""
+        if not parsed_href.path.endswith(".pdf"):
+            continue
+
+        is_absolute_or_scheme_relative = parsed_href.scheme in {"http", "https"} or (
+            not parsed_href.scheme and href.startswith("//")
+        )
+        if is_absolute_or_scheme_relative and (
+            host == "govinfo.gov" or host.endswith(".govinfo.gov")
+        ):
+            pdf_links.append(href if parsed_href.scheme else f"https:{href}")
+        elif not parsed_href.scheme and not host:
+            normalized_path = "/" + parsed_href.path.lstrip("/")
+            relative_url = f"https://www.govinfo.gov{normalized_path}"
+            if parsed_href.query:
+                relative_url += f"?{parsed_href.query}"
+            if parsed_href.fragment:
+                relative_url += f"#{parsed_href.fragment}"
+            pdf_links.append(relative_url)
+
+    return pdf_links
 
 
-def merge_pdfs(pdf_files: set[Path], output: Path) -> None:
+def merge_pdfs(pdf_files: set[Path], output: Path) -> bool:
     """
     Merge multiple PDFs into a single file with deterministic output.
     PDFs are sorted by Federal Register document number in descending order (newest first).
@@ -183,12 +324,78 @@ def merge_pdfs(pdf_files: set[Path], output: Path) -> None:
         pdf_files: Set of PDF file paths to merge
         output: Output path for the merged PDF
     """
+    FileSystemUtils.ensure_directory(output.parent)
+    state_path = output.parent / ".merge_state.json"
+    state_data = ConfigUtils.load_json_config(state_path)
+    merge_state: dict[str, Any] = state_data if isinstance(state_data, dict) else {}
+    metadata_cache: dict[str, Any] = (
+        merge_state.get("pdf_metadata", {})
+        if isinstance(merge_state.get("pdf_metadata"), dict)
+        else {}
+    )
+    output_states: dict[str, Any] = (
+        merge_state.get("outputs", {})
+        if isinstance(merge_state.get("outputs"), dict)
+        else {}
+    )
+
+    existing_pdf_files = sorted(path for path in pdf_files if path.exists())
+    signature_payload: list[dict[str, Any]] = []
+    for pdf_path in existing_pdf_files:
+        stats = pdf_path.stat()
+        signature_payload.append(
+            {
+                "path": str(pdf_path.resolve()),
+                "size": stats.st_size,
+                "mtime_ns": stats.st_mtime_ns,
+            }
+        )
+
+    input_signature = hashlib.sha256(
+        json.dumps(signature_payload, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+    output_key = str(output.resolve())
+    current_output_state = output_states.get(output_key, {})
+    if (
+        output.exists()
+        and isinstance(current_output_state, dict)
+        and current_output_state.get("input_signature") == input_signature
+    ):
+        console.print(
+            f"[green]Merge skipped for {output}; inputs are unchanged[/green]"
+        )
+        return False
+
+    merge_start = perf_counter()
     # Get document info for each PDF
-    pdf_info = []
+    pdf_info: list[tuple[Path, int, datetime | None]] = []
     for pdf_path in pdf_files:
         try:
+            if not PDFUtils.quick_pdf_sanity_check(pdf_path):
+                console.print(
+                    f"[yellow]Skipping {pdf_path.name}: failed quick PDF sanity check[/yellow]"
+                )
+                continue
+
             # Extract info from filename (format: YYYY-NNNNN.pdf)
             doc_num = int(pdf_path.stem.split("-")[1])
+            cache_key = str(pdf_path.resolve())
+            stats = pdf_path.stat()
+            cached_metadata = metadata_cache.get(cache_key)
+            if (
+                isinstance(cached_metadata, dict)
+                and cached_metadata.get("size") == stats.st_size
+                and cached_metadata.get("mtime_ns") == stats.st_mtime_ns
+            ):
+                pub_date_value = cached_metadata.get("pub_date")
+                pub_date = (
+                    datetime.fromisoformat(pub_date_value)
+                    if isinstance(pub_date_value, str) and pub_date_value
+                    else None
+                )
+                doc_num = int(cached_metadata.get("doc_num", doc_num))
+                pdf_info.append((pdf_path, doc_num, pub_date))
+                continue
 
             # Open PDF to get metadata
             reader = PdfReader(pdf_path)
@@ -266,6 +473,12 @@ def merge_pdfs(pdf_files: set[Path], output: Path) -> None:
                 continue
 
             pdf_info.append((pdf_path, doc_num, pub_date))
+            metadata_cache[cache_key] = {
+                "size": stats.st_size,
+                "mtime_ns": stats.st_mtime_ns,
+                "doc_num": doc_num,
+                "pub_date": pub_date.isoformat() if pub_date else None,
+            }
         except Exception as e:
             console.print(
                 f"[yellow]Warning: Could not parse info from {pdf_path.name}, skipping: {str(e)}[/yellow]"
@@ -307,7 +520,7 @@ def merge_pdfs(pdf_files: set[Path], output: Path) -> None:
 
     if not sorted_pdf_files:
         console.print("[red]No valid PDFs found after filtering[/red]")
-        return
+        return False
 
     console.print("[blue]Merging PDFs in chronological order (newest first)[/blue]")
     merger = PdfWriter()
@@ -334,6 +547,17 @@ def merge_pdfs(pdf_files: set[Path], output: Path) -> None:
     console.print(
         f"[green]Successfully merged {len(sorted_pdf_files)} PDFs into {output}[/green]"
     )
+    output_states[output_key] = {
+        "input_signature": input_signature,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "merged_file_count": len(sorted_pdf_files),
+    }
+    merge_state["pdf_metadata"] = metadata_cache
+    merge_state["outputs"] = output_states
+    ConfigUtils.save_json_config(merge_state, state_path)
+    merge_duration = perf_counter() - merge_start
+    console.print(f"[dim]Merge stage completed in {merge_duration:.2f}s[/dim]")
+    return True
 
 
 # For backwards compatibility, keep a simple command-line interface
@@ -349,7 +573,7 @@ if __name__ == "__main__":
 
     # Forward to cli.py if it exists
     try:
-        from cli import cli
+        from executive_orders_pdf.cli import cli
 
         # If no arguments were provided, show help
         if len(sys.argv) == 1:
