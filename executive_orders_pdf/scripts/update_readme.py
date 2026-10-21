@@ -8,6 +8,7 @@ import argparse
 import re
 from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 
 from executive_orders_pdf.utils import ConfigUtils, FileSystemUtils, console
 
@@ -42,8 +43,8 @@ def main(priority_president: str = "trump") -> None:
     pdf_table += "|:----------|:-----|:------|:-----|:-------------|:---------|\n"
 
     for pdf in pdf_summaries:
-        pdf_table += f'| {pdf["president"]} | {pdf["year"]} | {pdf["pages"]} | {pdf["size_mb"]} MB | {pdf["last_modified"]} | '
-        pdf_table += f'[Download](combined_pdfs/{pdf["filename"]}) |\n'
+        pdf_table += f"| {pdf['president']} | {pdf['year']} | {pdf['pages']} | {pdf['size_mb']} MB | {pdf['last_modified']} | "
+        pdf_table += f"[Download](combined_pdfs/{pdf['filename']}) |\n"
 
     # Get total statistics
     total_pages = sum(pdf.get("pages", 0) for pdf in pdf_summaries)
@@ -126,6 +127,9 @@ def main(priority_president: str = "trump") -> None:
     console.print("README.md has been updated with PDF summary information")
     if priority_pdfs:
         console.print(f"Featuring {president_display} as the prioritized president")
+    console.print(
+        f"[dim]README update completed in {perf_counter() - start:.2f}s[/dim]"
+    )
 
 
 if __name__ == "__main__":
@@ -140,3 +144,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main(priority_president=args.priority)
+    start = perf_counter()

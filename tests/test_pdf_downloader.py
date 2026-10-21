@@ -107,7 +107,7 @@ async def test_download_file_existing_file(
 
     # Create and configure the file with some content
     with open(existing_file, "wb") as f:
-        f.write(b"Valid PDF content")
+        f.write(b"%PDF-1.4 valid content")
 
     # Create downloader and download file
     downloader = PDFDownloader(download_dir=download_dir)
