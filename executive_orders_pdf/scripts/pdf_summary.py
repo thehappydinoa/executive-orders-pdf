@@ -7,6 +7,7 @@ It scans for PDFs, extracts metadata, and saves the information as JSON.
 import argparse
 import glob
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from executive_orders_pdf.utils import ConfigUtils, FileSystemUtils, PDFUtils, console
@@ -60,6 +61,9 @@ def main(priority_president: str = "trump") -> list[dict[str, Any]]:
     console.print(f"Found {len(pdf_summaries)} PDF files")
     if pdf_summaries:
         console.print(f"Prioritizing {priority_president} in the listing")
+    console.print(
+        f"[dim]PDF summary generation completed in {perf_counter() - start:.2f}s[/dim]"
+    )
 
     return pdf_summaries
 
@@ -74,3 +78,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main(priority_president=args.priority)
+    start = perf_counter()

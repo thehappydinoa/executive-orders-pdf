@@ -5,7 +5,7 @@ A Python tool to download and merge executive order PDFs from the Federal Regist
 [![GitHub Actions](https://github.com/thehappydinoa/executive-orders-pdf/actions/workflows/main.yml/badge.svg)](https://github.com/thehappydinoa/executive-orders-pdf/actions/workflows/main.yml)
 [![GitHub last commit](https://img.shields.io/github/last-commit/thehappydinoa/executive-orders-pdf)](https://github.com/thehappydinoa/executive-orders-pdf/commits/main/)
 [![License](https://img.shields.io/github/license/thehappydinoa/executive-orders-pdf)](https://github.com/thehappydinoa/executive-orders-pdf/blob/main/LICENSE)
-[![Python Version](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/thehappydinoa/executive-orders-pdf/blob/main/pyproject.toml)
+[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/thehappydinoa/executive-orders-pdf/blob/main/pyproject.toml)
 
 ## Features
 
@@ -248,10 +248,9 @@ We use several tools to maintain code quality:
 uv run pre-commit run --all-files
 
 # Or individual tools:
-uv run black .                    # Format code
-uv run isort .                    # Sort imports
-uv run flake8                     # Lint code
-uv run mypy executive_orders_pdf  # Type checking
+uv run ruff format .              # Format code
+uv run ruff check .               # Lint and sort imports
+uv run ty check                   # Type checking
 uv run bandit -r executive_orders_pdf  # Security scan
 ```
 
