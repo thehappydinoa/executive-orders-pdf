@@ -37,10 +37,8 @@ Thank you for your interest in contributing to this project! This document provi
 
 This project uses:
 
-- **Black** for code formatting
-- **isort** for import sorting
-- **flake8** with flake8-bugbear for linting
-- **mypy** for type checking
+- **Ruff** for formatting, import sorting, and linting
+- **ty** for type checking
 
 All of these run automatically when you commit, thanks to pre-commit hooks.
 
